@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0059)file:///C:/Users/AthyrVetAdmin/Downloads/sleep-tracker.html -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="en">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>Sleep Tracker</title>
-<link href="./index_files/css2" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0b0b18;
@@ -102,10 +102,10 @@
   .section-block { flex: 1; min-height: 0; }
 
   .section-label {
-    font-size: 0.6rem;
+    font-size: 0.84rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: #ffffff;
     margin-bottom: 4px;
     padding-left: 2px;
   }
@@ -133,8 +133,8 @@
   }
 
   .field-lbl {
-    font-size: 0.58rem;
-    color: var(--muted);
+    font-size: 0.81rem;
+    color: #ffffff;
     line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
@@ -142,9 +142,9 @@
   }
 
   .field-val {
-    font-size: 0.82rem;
+    font-size: 1.15rem;
     font-weight: 500;
-    color: var(--text);
+    color: #ffffff;
     margin-top: 2px;
     white-space: nowrap;
     overflow: hidden;
@@ -152,12 +152,12 @@
   }
 
   .field-val.empty {
-    color: rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.4);
     font-weight: 300;
-    font-size: 0.72rem;
+    font-size: 1.01rem;
   }
 
-  .field.rating .field-val { font-size: 0.72rem; }
+  .field.rating .field-val { font-size: 1.01rem; }
 
   .stars {
     display: flex;
@@ -181,8 +181,8 @@
     border: 1px solid rgba(124,106,247,0.15);
     border-radius: 10px;
     padding: 6px 12px;
-    font-size: 0.7rem;
-    color: var(--muted);
+    font-size: 0.98rem;
+    color: #ffffff;
     font-style: italic;
     line-height: 1.4;
     min-height: 30px;
@@ -369,18 +369,19 @@
   <div class="header">
     <div class="header-left">
       <h1>Sleep Tracker</h1>
-      <div class="date" id="today-date">Fri, Mar 27</div>
+      <div class="date" id="today-date"></div>
     </div>
     <div class="progress-ring">
       <svg width="44" height="44" viewBox="0 0 44 44">
         <defs>
-          <lineargradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#7c6af7"></stop>
-            <stop offset="100%" stop-color="#c084fc"></stop>
-          </lineargradient>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#7c6af7"/>
+            <stop offset="100%" stop-color="#c084fc"/>
+          </linearGradient>
         </defs>
-        <circle class="track" cx="22" cy="22" r="18"></circle>
-        <circle class="fill" id="progress-fill" cx="22" cy="22" r="18" stroke-dasharray="113.1" stroke-dashoffset="113.1" style="stroke-dashoffset: 113.1;"></circle>
+        <circle class="track" cx="22" cy="22" r="18"/>
+        <circle class="fill" id="progress-fill" cx="22" cy="22" r="18"
+          stroke-dasharray="113.1" stroke-dashoffset="113.1"/>
       </svg>
       <div class="progress-count" id="progress-count">0/14</div>
     </div>
@@ -496,7 +497,7 @@
   <div class="summary-sheet">
     <div class="summary-handle"></div>
     <div class="summary-title">Sleep Summary</div>
-    <div class="summary-sub" id="summary-date-label">Friday, March 27, 2026</div>
+    <div class="summary-sub" id="summary-date-label"></div>
     <div id="summary-rows"></div>
     <div class="summary-actions">
       <button class="btn btn-ghost" onclick="closeSummary()">← Edit</button>
@@ -700,6 +701,5 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 </script>
-
-
-</body></html>
+</body>
+</html>
