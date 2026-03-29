@@ -480,6 +480,8 @@
 
   </div>
 
+<button id="whoop-btn" class="review-btn" style="width:100%;margin-bottom:4px;" onclick="connectWhoop()">Connect Whoop</button>
+
   <div class="transcript-strip" id="transcript-box">Tap the mic and speak naturally.</div>
   <div class="processing-bar" id="processing-bar"></div>
 
@@ -509,6 +511,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
+const WHOOP_CLIENT_ID = 'fce442df-f296-415c-b7ee-f2d98572cb8f';
+const WHOOP_REDIRECT_URI = 'https://athyrvet.github.io/sleep-tracker';
 const FIELDS = [
   { key: 'bedtime',          label: 'Went to bed at' },
   { key: 'asleep',           label: 'Fell asleep at' },
@@ -525,6 +529,123 @@ const FIELDS = [
   { key: 'energy-afternoon', label: 'Afternoon energy', max: 5 },
   { key: 'energy-evening',   label: 'Evening energy', max: 5 },
 ];
+
+const WHOOP_AUTH_URL = 'https://api.prod.whoop.com/oauth/oauth2/auth';
+const WHOOP_TOKEN_URL = 'https://api.prod.whoop.com/oauth/oauth2/token';
+const WHOOP_SCOPES = 'read:sleep read:recovery offline';
+
+function generateCodeVerifier() {
+  const array = new Uint32Array(56);
+  crypto.getRandomValues(array);
+  return Array.from(array, n => n.toString(36)).join('').slice(0, 128);
+}
+
+function generateCodeChallenge(verifier) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  return crypto.subtle.digest('SHA-256', data).then(buffer => {
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  });
+}
+
+async function connectWhoop() {
+  const verifier = generateCodeVerifier();
+  sessionStorage.setItem('whoop_verifier', verifier);
+  const challenge = await generateCodeChallenge(verifier);
+  const params = new URLSearchParams({
+    client_id: WHOOP_CLIENT_ID,
+    redirect_uri: WHOOP_REDIRECT_URI,
+    response_type: 'code',
+    scope: WHOOP_SCOPES,
+    code_challenge: challenge,
+    code_challenge_method: 'S256'
+  });
+  window.location.href = WHOOP_AUTH_URL + '?' + params.toString();
+}
+
+async function handleWhoopCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (!code) return;
+
+  const verifier = sessionStorage.getItem('whoop_verifier');
+  const res = await fetch(WHOOP_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: WHOOP_REDIRECT_URI,
+      client_id: WHOOP_CLIENT_ID,
+      code_verifier: verifier
+    })
+  });
+
+  const token = await res.json();
+  if (!token.access_token) { showToast('Whoop login failed'); return; }
+  sessionStorage.setItem('whoop_token', token.access_token);
+  window.history.replaceState({}, '', window.location.pathname);
+  await fetchWhoopSleep();
+}
+
+async function fetchWhoopSleep() {
+  const token = sessionStorage.getItem('whoop_token');
+  if (!token) { showToast('Not connected to Whoop'); return; }
+
+  const res = await fetch('https://api.prod.whoop.com/developer/v1/activity/sleep?limit=1', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+
+  const json = await res.json();
+  const sleep = json.records?.[0];
+  if (!sleep) { showToast('No sleep data found'); return; }
+
+  const s = sleep.score;
+  const start = new Date(sleep.start);
+  const end = new Date(sleep.end);
+
+  function fmt(d) {
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function perfToScale(pct) {
+    if (pct >= 81) return '5/5 – Very good';
+    if (pct >= 61) return '4/5 – Good';
+    if (pct >= 41) return '3/5 – OK';
+    if (pct >= 21) return '2/5 – Poor';
+    return '1/5 – Very poor';
+  }
+
+  const totalSecs = s.stage_summary.total_in_bed_time_milli / 1000;
+  const awakeSecs = s.stage_summary.total_awake_time_milli / 1000;
+  const sleepHrs = ((totalSecs - awakeSecs) / 3600).toFixed(1);
+  const awakeMin = Math.round(awakeSecs / 60);
+
+  data['bedtime'] = fmt(start);
+  data['asleep'] = fmt(new Date(start.getTime() + (s.stage_summary.total_awake_time_milli / 2)));
+  data['wakeup'] = fmt(new Date(end.getTime() - (s.stage_summary.total_awake_time_milli / 2)));
+  data['outofbed'] = fmt(end);
+  data['hours'] = sleepHrs + ' hrs';
+  data['awakenings'] = (s.stage_summary.disturbance_count || 0) + ' times';
+  data['awake-time'] = awakeMin + ' min';
+  data['quality'] = perfToScale(s.sleep_performance_percentage);
+  if (sleep.nap) data['naps'] = '1 nap';
+
+  updateFields();
+  showToast('✓ Whoop data loaded');
+  document.getElementById('whoop-btn').textContent = '✓ Whoop Connected';
+  document.getElementById('whoop-btn').style.opacity = '0.6';
+}
+
+// Check for OAuth callback on load
+window.addEventListener('load', () => {
+  handleWhoopCallback();
+  if (sessionStorage.getItem('whoop_token')) {
+    document.getElementById('whoop-btn').textContent = '✓ Whoop Connected';
+    document.getElementById('whoop-btn').style.opacity = '0.6';
+  }
+});
 
 let data = {};
 let recognition = null;
