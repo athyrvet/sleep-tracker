@@ -553,13 +553,16 @@ async function connectWhoop() {
   const verifier = generateCodeVerifier();
   sessionStorage.setItem('whoop_verifier', verifier);
   const challenge = await generateCodeChallenge(verifier);
+  const state = crypto.randomUUID();
+  sessionStorage.setItem('whoop_state', state);
   const params = new URLSearchParams({
     client_id: WHOOP_CLIENT_ID,
     redirect_uri: WHOOP_REDIRECT_URI,
     response_type: 'code',
     scope: WHOOP_SCOPES,
     code_challenge: challenge,
-    code_challenge_method: 'S256'
+    code_challenge_method: 'S256',
+    state: state
   });
   window.location.href = WHOOP_AUTH_URL + '?' + params.toString();
 }
