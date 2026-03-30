@@ -565,30 +565,48 @@ async function connectWhoop() {
 }
 
 async function handleWhoopCallback() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  if (!code) return;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (!code) return;
 
-  const verifier = sessionStorage.getItem('whoop_verifier');
-  const res = await fetch(WHOOP_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: WHOOP_REDIRECT_URI,
-      client_id: WHOOP_CLIENT_ID,
-      code_verifier: verifier
-    })
-  });
+    window.history.replaceState({}, '', window.location.pathname);
 
-  const token = await res.json();
-  if (!token.access_token) { showToast('Whoop login failed'); return; }
-  sessionStorage.setItem('whoop_token', token.access_token);
-  window.history.replaceState({}, '', window.location.pathname);
-  await fetchWhoopSleep();
+    const verifier = sessionStorage.getItem('whoop_verifier');
+    if (!verifier) { showToast('Session expired, try again'); return; }
+
+    showToast('Connecting to Whoop…');
+
+    const res = await fetch(WHOOP_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: WHOOP_REDIRECT_URI,
+        client_id: WHOOP_CLIENT_ID,
+        code_verifier: verifier
+      })
+    });
+
+    const token = await res.json();
+
+    if (!token.access_token) {
+      showToast('Whoop error: ' + (token.error || 'unknown'));
+      console.error('Token error:', token);
+      return;
+    }
+
+    sessionStorage.setItem('whoop_token', token.access_token);
+    document.getElementById('whoop-btn').textContent = '✓ Whoop Connected';
+    document.getElementById('whoop-btn').style.opacity = '0.6';
+    await fetchWhoopSleep();
+
+  } catch(err) {
+    showToast('Whoop failed: ' + err.message);
+    console.error('Callback error:', err);
+  }
 }
-
 async function fetchWhoopSleep() {
   const token = sessionStorage.getItem('whoop_token');
   if (!token) { showToast('Not connected to Whoop'); return; }
