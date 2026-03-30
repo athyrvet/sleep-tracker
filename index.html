@@ -614,8 +614,13 @@ async function fetchWhoopSleep() {
   const token = sessionStorage.getItem('whoop_token');
   if (!token) { showToast('Not connected to Whoop'); return; }
 
-  const res = await fetch('https://api.prod.whoop.com/developer/v1/activity/sleep?limit=1', {
-    headers: { 'Authorization': 'Bearer ' + token }
+  const res = await fetch(WHOOP_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'fetch_sleep',
+      access_token: token
+    })
   });
 
   const json = await res.json();
