@@ -531,7 +531,7 @@ const FIELDS = [
 ];
 
 const WHOOP_AUTH_URL = 'https://api.prod.whoop.com/oauth/oauth2/auth';
-const WHOOP_TOKEN_URL = 'https://api.prod.whoop.com/oauth/oauth2/token';
+const WHOOP_TOKEN_URL = 'https://whoop-auth.old-bar-46c9.workers.dev';
 const WHOOP_SCOPES = 'read:sleep read:recovery offline';
 
 function generateCodeVerifier() {
@@ -572,8 +572,8 @@ async function handleWhoopCallback() {
   const verifier = sessionStorage.getItem('whoop_verifier');
   const res = await fetch(WHOOP_TOKEN_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
       grant_type: 'authorization_code',
       code,
       redirect_uri: WHOOP_REDIRECT_URI,
