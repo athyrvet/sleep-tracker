@@ -629,6 +629,23 @@
     color: var(--accent2);
   }
 
+  /* ── Export button ── */
+  .export-btn {
+    background: var(--soft);
+    border: 1px solid rgba(124,106,247,0.3);
+    border-radius: 10px;
+    padding: 7px 11px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--accent2);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .export-btn:active { background: rgba(124,106,247,0.2); }
+
   /* ── Toast ── */
   .toast {
     position: fixed;
@@ -658,6 +675,7 @@
       <h1>Sleep Tracker</h1>
       <div class="date" id="today-date"></div>
     </div>
+    <button class="export-btn" onclick="exportCSV()" title="Export CSV">⬇ CSV</button>
     <div class="progress-ring">
       <svg width="53" height="53" viewBox="0 0 53 53">
         <defs>
@@ -1641,6 +1659,36 @@ function loadEntry(key) {
     switchView('tracker');
     showToast('Loaded entry for ' + key);
   }
+}
+
+// ── Export CSV ──
+function exportCSV() {
+  const entries = JSON.parse(localStorage.getItem('sleep_entries') || '{}');
+  const keys = Object.keys(entries).sort();
+
+  if (keys.length === 0) {
+    showToast('No entries to export');
+    return;
+  }
+
+  const headers = ['Date', ...FIELDS.map(f => f.label)];
+  const rows = keys.map(k => {
+    const e = entries[k];
+    return [k, ...FIELDS.map(f => {
+      const val = e[f.key] || '';
+      return '"' + val.replace(/"/g, '""') + '"';
+    })].join(',');
+  });
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sleep-tracker-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('\u2713 CSV exported (' + keys.length + ' entries)');
 }
 
 // ── Confirm dialog ──
