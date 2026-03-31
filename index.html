@@ -264,7 +264,21 @@
   }
 
   .star:active { transform: scale(0.85); }
-  .star.on { background: var(--accent2); }
+  .star.star-zero {
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card);
+    color: var(--accent2);
+    border: none;
+  }
+
+  .star.star-zero.on {
+    background: var(--card);
+    color: var(--accent2);
+  }
 
   .field.rating.confirming {
     border-color: rgba(192,132,252,0.6);
@@ -788,14 +802,14 @@
               <div class="field-lbl">Alarm snoozes</div>
               <div class="field-val empty" id="val-snooze">—</div>
               <div class="stars" id="stars-snooze">
-                <div class="star" onclick="tapRadioInline('snooze',1)"></div><div class="star" onclick="tapRadioInline('snooze',2)"></div><div class="star" onclick="tapRadioInline('snooze',3)"></div><div class="star" onclick="tapRadioInline('snooze',4)"></div><div class="star" onclick="tapRadioInline('snooze',5)"></div>
+                <div class="star star-zero on" id="zero-snooze" onclick="tapRadioInline('snooze',0)">✕</div><div class="star" onclick="tapRadioInline('snooze',1)"></div><div class="star" onclick="tapRadioInline('snooze',2)"></div><div class="star" onclick="tapRadioInline('snooze',3)"></div><div class="star" onclick="tapRadioInline('snooze',4)"></div><div class="star" onclick="tapRadioInline('snooze',5)"></div>
               </div>
             </div>
             <div class="field rating" id="card-naps">
               <div class="field-lbl">Naps yesterday</div>
               <div class="field-val empty" id="val-naps">—</div>
               <div class="stars" id="stars-naps">
-                <div class="star" onclick="tapRadioInline('naps',1)"></div><div class="star" onclick="tapRadioInline('naps',2)"></div><div class="star" onclick="tapRadioInline('naps',3)"></div>
+                <div class="star star-zero on" id="zero-naps" onclick="tapRadioInline('naps',0)">✕</div><div class="star" onclick="tapRadioInline('naps',1)"></div><div class="star" onclick="tapRadioInline('naps',2)"></div><div class="star" onclick="tapRadioInline('naps',3)"></div>
               </div>
             </div>
           </div>
@@ -1001,7 +1015,7 @@ updateProgress();
 function updateStars(key, num) {
   const c = document.getElementById('stars-' + key);
   if (!c) return;
-  c.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('on', i < num));
+  c.querySelectorAll('.star:not(.star-zero)').forEach((s, i) => s.classList.toggle('on', i < num));
 }
 
 // ── Update fields ──
@@ -1030,10 +1044,15 @@ function updateFields() {
 
 // ── Inline radio tap (snooze/naps) ──
 function tapRadioInline(key, num) {
-  const unit = key === 'naps'
-    ? (num === 1 ? '1 nap' : num + ' naps')
-    : (num === 1 ? '1 snooze' : num + ' snoozes');
+  const unit = num === 0
+    ? '0 ' + (key === 'naps' ? 'naps' : 'snoozes')
+    : key === 'naps'
+      ? (num === 1 ? '1 nap' : num + ' naps')
+      : (num === 1 ? '1 snooze' : num + ' snoozes');
 
+  // Update circles — if 0, highlight only the X; if >0, unhighlight X
+  const zeroEl = document.getElementById('zero-' + key);
+  if (zeroEl) zeroEl.classList.toggle('on', num === 0);
   updateStars(key, num);
 
   const card = document.getElementById('card-' + key);
