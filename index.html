@@ -237,7 +237,7 @@
     font-size: 1.01rem;
   }
 
-  .field.rating .field-val { font-size: 1.01rem; }
+  .field.rating .field-val { display: none; }
 
   .edit-hint {
     position: absolute;
@@ -246,20 +246,31 @@
     color: rgba(255,255,255,0.2);
   }
 
+  .field.rating .edit-hint { display: none; }
+
   .stars {
     display: flex;
-    gap: 2px;
-    margin-top: 3px;
+    gap: 6px;
+    margin-top: 4px;
   }
 
   .star {
-    width: 6px; height: 6px;
+    width: 20px; height: 20px;
     border-radius: 50%;
     background: var(--soft);
     flex-shrink: 0;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
   }
 
+  .star:active { transform: scale(0.85); }
   .star.on { background: var(--accent2); }
+
+  .field.rating.confirming {
+    border-color: rgba(192,132,252,0.6);
+    background: rgba(192,132,252,0.08);
+    transition: border-color 0.2s, background 0.2s;
+  }
 
   /* ── Transcript ── */
   .transcript-strip {
@@ -356,6 +367,39 @@
     background: rgba(52,211,153,0.15);
     color: var(--success);
   }
+
+  /* ── Radio picker ── */
+  .radio-picker {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 8px 0 18px;
+    flex-wrap: wrap;
+  }
+
+  .radio-pick {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: 2px solid rgba(124,106,247,0.3);
+    background: var(--card);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .radio-pick.active {
+    border-color: var(--accent2);
+    background: rgba(192,132,252,0.2);
+    color: #ffffff;
+  }
+
+  .radio-pick:active { transform: scale(0.9); }
 
   /* ── Star picker ── */
   .star-picker {
@@ -740,15 +784,19 @@
               <div class="field-lbl">Awake after onset</div>
               <div class="field-val empty" id="val-awake-time">—</div>
             </div>
-            <div class="field" id="card-snooze" onclick="editField('snooze')">
-              <div class="edit-hint">✎</div>
+            <div class="field rating" id="card-snooze">
               <div class="field-lbl">Alarm snoozes</div>
               <div class="field-val empty" id="val-snooze">—</div>
+              <div class="stars" id="stars-snooze">
+                <div class="star" onclick="tapRadioInline('snooze',1)"></div><div class="star" onclick="tapRadioInline('snooze',2)"></div><div class="star" onclick="tapRadioInline('snooze',3)"></div><div class="star" onclick="tapRadioInline('snooze',4)"></div><div class="star" onclick="tapRadioInline('snooze',5)"></div>
+              </div>
             </div>
-            <div class="field" id="card-naps" onclick="editField('naps')">
-              <div class="edit-hint">✎</div>
+            <div class="field rating" id="card-naps">
               <div class="field-lbl">Naps yesterday</div>
               <div class="field-val empty" id="val-naps">—</div>
+              <div class="stars" id="stars-naps">
+                <div class="star" onclick="tapRadioInline('naps',1)"></div><div class="star" onclick="tapRadioInline('naps',2)"></div><div class="star" onclick="tapRadioInline('naps',3)"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -756,44 +804,39 @@
         <div class="col-section">
           <div class="section-label">Ratings</div>
           <div class="fields-grid cols-1">
-            <div class="field rating" id="card-quality" onclick="editField('quality')">
-              <div class="edit-hint">✎</div>
+            <div class="field rating" id="card-quality">
               <div class="field-lbl">Sleep quality /5</div>
               <div class="field-val empty" id="val-quality">—</div>
               <div class="stars" id="stars-quality">
-                <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+                <div class="star" onclick="tapStar('quality',1)"></div><div class="star" onclick="tapStar('quality',2)"></div><div class="star" onclick="tapStar('quality',3)"></div><div class="star" onclick="tapStar('quality',4)"></div><div class="star" onclick="tapStar('quality',5)"></div>
               </div>
             </div>
-            <div class="field rating" id="card-quantity" onclick="editField('quantity')">
-              <div class="edit-hint">✎</div>
+            <div class="field rating" id="card-quantity">
               <div class="field-lbl">Sleep quantity /4</div>
               <div class="field-val empty" id="val-quantity">—</div>
               <div class="stars" id="stars-quantity">
-                <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+                <div class="star" onclick="tapStar('quantity',1)"></div><div class="star" onclick="tapStar('quantity',2)"></div><div class="star" onclick="tapStar('quantity',3)"></div><div class="star" onclick="tapStar('quantity',4)"></div>
               </div>
             </div>
-            <div class="field rating" id="card-energy-morning" onclick="editField('energy-morning')">
-              <div class="edit-hint">✎</div>
+            <div class="field rating" id="card-energy-morning">
               <div class="field-lbl">Morning energy /5</div>
               <div class="field-val empty" id="val-energy-morning">—</div>
               <div class="stars" id="stars-energy-morning">
-                <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+                <div class="star" onclick="tapStar('energy-morning',1)"></div><div class="star" onclick="tapStar('energy-morning',2)"></div><div class="star" onclick="tapStar('energy-morning',3)"></div><div class="star" onclick="tapStar('energy-morning',4)"></div><div class="star" onclick="tapStar('energy-morning',5)"></div>
               </div>
             </div>
-            <div class="field rating" id="card-energy-afternoon" onclick="editField('energy-afternoon')">
-              <div class="edit-hint">✎</div>
+            <div class="field rating" id="card-energy-afternoon">
               <div class="field-lbl">Afternoon energy /5</div>
               <div class="field-val empty" id="val-energy-afternoon">—</div>
               <div class="stars" id="stars-energy-afternoon">
-                <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+                <div class="star" onclick="tapStar('energy-afternoon',1)"></div><div class="star" onclick="tapStar('energy-afternoon',2)"></div><div class="star" onclick="tapStar('energy-afternoon',3)"></div><div class="star" onclick="tapStar('energy-afternoon',4)"></div><div class="star" onclick="tapStar('energy-afternoon',5)"></div>
               </div>
             </div>
-            <div class="field rating" id="card-energy-evening" onclick="editField('energy-evening')">
-              <div class="edit-hint">✎</div>
+            <div class="field rating" id="card-energy-evening">
               <div class="field-lbl">Evening energy /5</div>
               <div class="field-val empty" id="val-energy-evening">—</div>
               <div class="stars" id="stars-energy-evening">
-                <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+                <div class="star" onclick="tapStar('energy-evening',1)"></div><div class="star" onclick="tapStar('energy-evening',2)"></div><div class="star" onclick="tapStar('energy-evening',3)"></div><div class="star" onclick="tapStar('energy-evening',4)"></div><div class="star" onclick="tapStar('energy-evening',5)"></div>
               </div>
             </div>
           </div>
@@ -858,6 +901,10 @@
 <div class="modal-overlay" id="edit-modal">
   <div class="modal-box">
     <div class="modal-title" id="edit-modal-title">Edit field</div>
+    <!-- Radio picker (shown for snooze/naps) -->
+    <div id="radio-picker-wrap" style="display:none">
+      <div class="radio-picker" id="radio-picker"></div>
+    </div>
     <!-- Star picker (shown for rating fields) -->
     <div id="star-picker-wrap" style="display:none">
       <div class="star-picker" id="star-picker"></div>
@@ -903,8 +950,8 @@ const FIELDS = [
   { key: 'hours',            label: 'Hours slept' },
   { key: 'awakenings',       label: 'Times woken up' },
   { key: 'awake-time',       label: 'Awake after sleep onset' },
-  { key: 'snooze',           label: 'Alarm snoozes' },
-  { key: 'naps',             label: 'Naps yesterday' },
+  { key: 'snooze',           label: 'Alarm snoozes', radio: [0,1,2,3,4,5] },
+  { key: 'naps',             label: 'Naps yesterday', radio: [0,1,2,3] },
   { key: 'quality',          label: 'Sleep quality', max: 5, hint: 'Enter 1–5 (1=Very poor, 3=OK, 5=Very good)' },
   { key: 'quantity',         label: 'Sleep quantity', max: 4, hint: 'Enter 1–4 (1=Very inadequate, 3=About right, 4=Too much)' },
   { key: 'energy-morning',   label: 'Morning energy', max: 5, hint: 'Enter 1–5 (1=Very low, 3=Average, 5=Very high)' },
@@ -916,7 +963,7 @@ const QUALITY_LABELS  = ['','Very poor','Poor','OK','Good','Very good'];
 const QUANTITY_LABELS = ['','Very inadequate','Inadequate','About right','Too much'];
 const ENERGY_LABELS   = ['','Very low','Low','Average','High','Very high'];
 
-let data = {};
+let data = { snooze: '0 snoozes', naps: '0 naps' };
 let recognition = null;
 let isListening = false;
 let editingKey = null;
@@ -981,8 +1028,59 @@ function updateFields() {
   updateProgress();
 }
 
+// ── Inline radio tap (snooze/naps) ──
+function tapRadioInline(key, num) {
+  const unit = key === 'naps'
+    ? (num === 1 ? '1 nap' : num + ' naps')
+    : (num === 1 ? '1 snooze' : num + ' snoozes');
+
+  updateStars(key, num);
+
+  const card = document.getElementById('card-' + key);
+  card.classList.add('confirming');
+
+  if (starConfirmTimers[key]) clearTimeout(starConfirmTimers[key]);
+
+  starConfirmTimers[key] = setTimeout(() => {
+    data[key] = unit;
+    updateFields();
+    card.classList.remove('confirming');
+    delete starConfirmTimers[key];
+  }, 800);
+}
+
+// ── Inline star tap ──
+let starConfirmTimers = {};
+
+function tapStar(key, num) {
+  const field = FIELDS.find(f => f.key === key);
+  let label = '';
+  if (key === 'quality') label = QUALITY_LABELS[num];
+  else if (key === 'quantity') label = QUANTITY_LABELS[num];
+  else label = ENERGY_LABELS[num];
+
+  // Update stars immediately
+  updateStars(key, num);
+
+  // Highlight card as confirming
+  const card = document.getElementById('card-' + key);
+  card.classList.add('confirming');
+
+  // Clear any pending timer for this key
+  if (starConfirmTimers[key]) clearTimeout(starConfirmTimers[key]);
+
+  // Save after 800ms if no further taps
+  starConfirmTimers[key] = setTimeout(() => {
+    data[key] = num + '/' + field.max + ' \u2013 ' + label;
+    updateFields();
+    card.classList.remove('confirming');
+    delete starConfirmTimers[key];
+  }, 800);
+}
+
 // ── Edit modal ──
 let starPickerValue = 0;
+let radioPickerValue = null;
 
 function editField(key) {
   const field = FIELDS.find(f => f.key === key);
@@ -990,8 +1088,17 @@ function editField(key) {
   document.getElementById('edit-modal-title').textContent = field.label;
   document.getElementById('edit-modal').classList.add('visible');
 
-  if (field.max) {
+  if (field.radio) {
+    // Radio picker mode
+    document.getElementById('radio-picker-wrap').style.display = 'block';
+    document.getElementById('star-picker-wrap').style.display = 'none';
+    document.getElementById('text-input-wrap').style.display = 'none';
+    const current = data[key] ? parseInt(data[key]) : null;
+    radioPickerValue = current;
+    renderRadioPicker(field, current);
+  } else if (field.max) {
     // Star picker mode
+    document.getElementById('radio-picker-wrap').style.display = 'none';
     document.getElementById('star-picker-wrap').style.display = 'block';
     document.getElementById('text-input-wrap').style.display = 'none';
     const current = parseInt(data[key]) || 0;
@@ -999,12 +1106,29 @@ function editField(key) {
     renderStarPicker(field, current);
   } else {
     // Text input mode
+    document.getElementById('radio-picker-wrap').style.display = 'none';
     document.getElementById('star-picker-wrap').style.display = 'none';
     document.getElementById('text-input-wrap').style.display = 'block';
     document.getElementById('edit-modal-hint').textContent = 'e.g. ' + getPlaceholder(key);
     document.getElementById('edit-modal-input').value = data[key] || '';
     setTimeout(() => document.getElementById('edit-modal-input').focus(), 100);
   }
+}
+
+function renderRadioPicker(field, selected) {
+  const picker = document.getElementById('radio-picker');
+  picker.innerHTML = '';
+  field.radio.forEach(n => {
+    const btn = document.createElement('button');
+    btn.className = 'radio-pick' + (selected === n ? ' active' : '');
+    btn.textContent = n;
+    btn.onclick = () => {
+      radioPickerValue = n;
+      picker.querySelectorAll('.radio-pick').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    picker.appendChild(btn);
+  });
 }
 
 function renderStarPicker(field, selected) {
@@ -1045,12 +1169,17 @@ function closeEditModal() {
   document.getElementById('edit-modal').classList.remove('visible');
   editingKey = null;
   starPickerValue = 0;
+  radioPickerValue = null;
 }
 
 function confirmEdit() {
   const field = FIELDS.find(f => f.key === editingKey);
 
-  if (field.max) {
+  if (field.radio) {
+    if (radioPickerValue === null) { closeEditModal(); return; }
+    const unit = field.key === 'naps' ? ' nap' + (radioPickerValue !== 1 ? 's' : '') : ' snooze' + (radioPickerValue !== 1 ? 's' : '');
+    data[editingKey] = radioPickerValue + unit;
+  } else if (field.max) {
     if (!starPickerValue) { closeEditModal(); return; }
     let label = '';
     if (field.key === 'quality') label = QUALITY_LABELS[starPickerValue];
