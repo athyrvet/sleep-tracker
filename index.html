@@ -252,6 +252,7 @@
     display: flex;
     gap: 6px;
     margin-top: 4px;
+    align-items: center;
   }
 
   .star {
@@ -261,23 +262,29 @@
     flex-shrink: 0;
     cursor: pointer;
     transition: background 0.15s, transform 0.1s;
+    border: none;
+    padding: 0;
+    display: inline-block;
   }
 
   .star:active { transform: scale(0.85); }
-  .star.star-zero {
-    font-size: 0.85rem;
+  .star.on { background: var(--accent2); }
+
+  .star-zero-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 0.9rem;
     font-weight: 700;
-    background: transparent;
     color: var(--accent2);
-    border-radius: 0;
-    width: 20px;
-    height: 20px;
+    line-height: 1;
+    flex-shrink: 0;
+    opacity: 1;
+    transition: opacity 0.2s;
   }
 
-  .star.star-zero.on {
-    background: transparent;
-    color: var(--accent2);
-  }
+  .star-zero-btn.faded { opacity: 0.2; }
 
   .field.rating.confirming {
     border-color: rgba(192,132,252,0.6);
@@ -800,21 +807,23 @@
             <div class="field rating" id="card-snooze">
               <div class="field-lbl">Alarm snoozes</div>
               <div class="field-val empty" id="val-snooze">—</div>
-              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-                <span id="zero-snooze" onclick="tapRadioInline('snooze',0)" style="font-size:0.85rem;font-weight:700;color:var(--accent2);cursor:pointer;line-height:1;width:20px;text-align:center;">✕</span>
-                <div class="stars" id="stars-snooze" style="margin-top:0;">
-                  <div class="star" onclick="tapRadioInline('snooze',1)"></div><div class="star" onclick="tapRadioInline('snooze',2)"></div><div class="star" onclick="tapRadioInline('snooze',3)"></div><div class="star" onclick="tapRadioInline('snooze',4)"></div><div class="star" onclick="tapRadioInline('snooze',5)"></div>
-                </div>
+              <div class="stars" id="stars-snooze">
+                <button class="star-zero-btn" id="zero-snooze">✕</button>
+                <button class="star"></button>
+                <button class="star"></button>
+                <button class="star"></button>
+                <button class="star"></button>
+                <button class="star"></button>
               </div>
             </div>
             <div class="field rating" id="card-naps">
               <div class="field-lbl">Naps yesterday</div>
               <div class="field-val empty" id="val-naps">—</div>
-              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-                <span id="zero-naps" onclick="tapRadioInline('naps',0)" style="font-size:0.85rem;font-weight:700;color:var(--accent2);cursor:pointer;line-height:1;width:20px;text-align:center;">✕</span>
-                <div class="stars" id="stars-naps" style="margin-top:0;">
-                  <div class="star" onclick="tapRadioInline('naps',1)"></div><div class="star" onclick="tapRadioInline('naps',2)"></div><div class="star" onclick="tapRadioInline('naps',3)"></div>
-                </div>
+              <div class="stars" id="stars-naps">
+                <button class="star-zero-btn" id="zero-naps">✕</button>
+                <button class="star"></button>
+                <button class="star"></button>
+                <button class="star"></button>
               </div>
             </div>
           </div>
@@ -827,35 +836,35 @@
               <div class="field-lbl">Sleep quality /5</div>
               <div class="field-val empty" id="val-quality">—</div>
               <div class="stars" id="stars-quality">
-                <div class="star" onclick="tapStar('quality',1)"></div><div class="star" onclick="tapStar('quality',2)"></div><div class="star" onclick="tapStar('quality',3)"></div><div class="star" onclick="tapStar('quality',4)"></div><div class="star" onclick="tapStar('quality',5)"></div>
+                <button class="star"></button><button class="star"></button><button class="star"></button><button class="star"></button><button class="star"></button>
               </div>
             </div>
             <div class="field rating" id="card-quantity">
               <div class="field-lbl">Sleep quantity /4</div>
               <div class="field-val empty" id="val-quantity">—</div>
               <div class="stars" id="stars-quantity">
-                <div class="star" onclick="tapStar('quantity',1)"></div><div class="star" onclick="tapStar('quantity',2)"></div><div class="star" onclick="tapStar('quantity',3)"></div><div class="star" onclick="tapStar('quantity',4)"></div>
+                <button class="star"></button><button class="star"></button><button class="star"></button><button class="star"></button>
               </div>
             </div>
             <div class="field rating" id="card-energy-morning">
               <div class="field-lbl">Morning energy /5</div>
               <div class="field-val empty" id="val-energy-morning">—</div>
               <div class="stars" id="stars-energy-morning">
-                <div class="star" onclick="tapStar('energy-morning',1)"></div><div class="star" onclick="tapStar('energy-morning',2)"></div><div class="star" onclick="tapStar('energy-morning',3)"></div><div class="star" onclick="tapStar('energy-morning',4)"></div><div class="star" onclick="tapStar('energy-morning',5)"></div>
+                <button class="star"></button><button class="star"></button><button class="star"></button><button class="star"></button><button class="star"></button>
               </div>
             </div>
             <div class="field rating" id="card-energy-afternoon">
               <div class="field-lbl">Afternoon energy /5</div>
               <div class="field-val empty" id="val-energy-afternoon">—</div>
               <div class="stars" id="stars-energy-afternoon">
-                <div class="star" onclick="tapStar('energy-afternoon',1)"></div><div class="star" onclick="tapStar('energy-afternoon',2)"></div><div class="star" onclick="tapStar('energy-afternoon',3)"></div><div class="star" onclick="tapStar('energy-afternoon',4)"></div><div class="star" onclick="tapStar('energy-afternoon',5)"></div>
+                <button class="star"></button><button class="star"></button><button class="star"></button><button class="star"></button><button class="star"></button>
               </div>
             </div>
             <div class="field rating" id="card-energy-evening">
               <div class="field-lbl">Evening energy /5</div>
               <div class="field-val empty" id="val-energy-evening">—</div>
               <div class="stars" id="stars-energy-evening">
-                <div class="star" onclick="tapStar('energy-evening',1)"></div><div class="star" onclick="tapStar('energy-evening',2)"></div><div class="star" onclick="tapStar('energy-evening',3)"></div><div class="star" onclick="tapStar('energy-evening',4)"></div><div class="star" onclick="tapStar('energy-evening',5)"></div>
+                <button class="star"></button><button class="star"></button><button class="star"></button><button class="star"></button><button class="star"></button>
               </div>
             </div>
           </div>
@@ -1047,6 +1056,44 @@ function updateFields() {
   updateProgress();
 }
 
+// ── Wire up star and radio taps (iOS Safari compatible) ──
+function wireStarTaps() {
+  // Rating stars
+  ['quality','quantity','energy-morning','energy-afternoon','energy-evening'].forEach(key => {
+    const container = document.getElementById('stars-' + key);
+    if (!container) return;
+    container.querySelectorAll('.star').forEach((star, i) => {
+      const num = i + 1;
+      star.addEventListener('click', e => {
+        e.stopPropagation();
+        tapStar(key, num);
+      });
+    });
+  });
+
+  // Snooze
+  const snoozeContainer = document.getElementById('stars-snooze');
+  if (snoozeContainer) {
+    snoozeContainer.querySelectorAll('.star').forEach((star, i) => {
+      const num = i + 1;
+      star.addEventListener('click', e => { e.stopPropagation(); tapRadioInline('snooze', num); });
+    });
+    const zeroSnooze = document.getElementById('zero-snooze');
+    if (zeroSnooze) zeroSnooze.addEventListener('click', e => { e.stopPropagation(); tapRadioInline('snooze', 0); });
+  }
+
+  // Naps
+  const napsContainer = document.getElementById('stars-naps');
+  if (napsContainer) {
+    napsContainer.querySelectorAll('.star').forEach((star, i) => {
+      const num = i + 1;
+      star.addEventListener('click', e => { e.stopPropagation(); tapRadioInline('naps', num); });
+    });
+    const zeroNaps = document.getElementById('zero-naps');
+    if (zeroNaps) zeroNaps.addEventListener('click', e => { e.stopPropagation(); tapRadioInline('naps', 0); });
+  }
+}
+
 // ── Inline radio tap (snooze/naps) ──
 function tapRadioInline(key, num) {
   const unit = num === 0
@@ -1055,18 +1102,14 @@ function tapRadioInline(key, num) {
       ? (num === 1 ? '1 nap' : num + ' naps')
       : (num === 1 ? '1 snooze' : num + ' snoozes');
 
-  // Toggle X visibility
   const zeroEl = document.getElementById('zero-' + key);
-  if (zeroEl) zeroEl.style.opacity = num === 0 ? '1' : '0.2';
-
-  // Update circles
+  if (zeroEl) zeroEl.classList.toggle('faded', num !== 0);
   updateStars(key, num);
 
   const card = document.getElementById('card-' + key);
   card.classList.add('confirming');
 
   if (starConfirmTimers[key]) clearTimeout(starConfirmTimers[key]);
-
   starConfirmTimers[key] = setTimeout(() => {
     data[key] = unit;
     updateFields();
@@ -1889,6 +1932,9 @@ window.addEventListener('load', async () => {
     delete data.savedAt;
     updateFields();
   }
+
+  // Wire up star/circle taps for iOS Safari
+  wireStarTaps();
 });
 </script>
 </body>
