@@ -49,7 +49,7 @@
     flex-shrink: 0;
     display: flex;
     gap: 4px;
-    padding: 2px 0 4px;
+    padding: 4px 0 calc(env(safe-area-inset-bottom, 16px) + 24px);
   }
 
   .nav-tab {
@@ -127,14 +127,14 @@
     padding-bottom: 2px;
   }
 
-  .section-block { flex: 1; min-height: 0; }
+  .section-block { flex: 0 0 auto; }
 
   .section-label {
     font-size: 0.84rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: #ffffff;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     padding-left: 2px;
   }
 
@@ -220,14 +220,15 @@
     border: 1px solid rgba(124,106,247,0.15);
     border-radius: 10px;
     padding: 5px 12px;
-    font-size: 0.98rem;
+    font-size: 0.65rem;
     color: #ffffff;
     font-style: italic;
     line-height: 1.4;
     min-height: 28px;
     max-height: 38px;
     overflow: hidden;
-    margin: 2px 0 1px;
+    margin: 6px 0 2px;
+    text-align: center;
   }
 
   .processing-bar {
@@ -306,6 +307,33 @@
   .bar-btn.whoop-connected {
     background: rgba(52,211,153,0.15);
     color: var(--success);
+  }
+
+  /* ── Star picker ── */
+  .star-picker {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 8px 0 18px;
+  }
+
+  .star-pick {
+    font-size: 2rem;
+    cursor: pointer;
+    opacity: 0.3;
+    transition: opacity 0.15s, transform 0.15s;
+    -webkit-text-fill-color: initial;
+  }
+
+  .star-pick.active { opacity: 1; transform: scale(1.15); }
+  .star-pick:active { transform: scale(0.9); }
+
+  .star-pick-label {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--accent2);
+    min-height: 18px;
+    margin-bottom: 14px;
   }
 
   /* ── Edit modal ── */
@@ -703,7 +731,7 @@
     </div>
   </div>
 
-  <div class="transcript-strip" id="transcript-box">Tap the mic and speak naturally.</div>
+  <div class="transcript-strip" id="transcript-box">Tap the mic and speak naturally</div>
   <div class="processing-bar" id="processing-bar"></div>
 
   <div class="bottom-bar">
@@ -711,7 +739,7 @@
     <button class="voice-btn" id="voice-btn" onclick="toggleListening()">
       <span id="mic-icon">🎙️</span>
     </button>
-    <button class="bar-btn" onclick="showSummary()">Review</button>
+    <button class="bar-btn" onclick="saveEntry()">Save ✓</button>
   </div>
 
   <div class="nav-tabs">
@@ -758,11 +786,29 @@
 <div class="modal-overlay" id="edit-modal">
   <div class="modal-box">
     <div class="modal-title" id="edit-modal-title">Edit field</div>
-    <div class="modal-hint" id="edit-modal-hint"></div>
-    <input class="modal-input" id="edit-modal-input" type="text" autocomplete="off"/>
+    <!-- Star picker (shown for rating fields) -->
+    <div id="star-picker-wrap" style="display:none">
+      <div class="star-picker" id="star-picker"></div>
+      <div class="star-pick-label" id="star-pick-label"></div>
+    </div>
+    <!-- Text input (shown for non-rating fields) -->
+    <div id="text-input-wrap">
+      <div class="modal-hint" id="edit-modal-hint"></div>
+      <input class="modal-input" id="edit-modal-input" type="text" autocomplete="off"/>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
       <button class="btn btn-primary" onclick="confirmEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="confirm-msg" style="color:var(--text);font-size:0.9rem;line-height:1.5;margin-bottom:18px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeConfirm()">No</button>
+      <button class="btn btn-primary" id="confirm-yes-btn">Yes</button>
     </div>
   </div>
 </div>
@@ -864,14 +910,57 @@ function updateFields() {
 }
 
 // ── Edit modal ──
+let starPickerValue = 0;
+
 function editField(key) {
   const field = FIELDS.find(f => f.key === key);
   editingKey = key;
-  document.getElementById('edit-modal-title').textContent = 'Edit: ' + field.label;
-  document.getElementById('edit-modal-hint').textContent = field.hint || (field.max ? '' : 'e.g. ' + getPlaceholder(key));
-  document.getElementById('edit-modal-input').value = data[key] || '';
+  document.getElementById('edit-modal-title').textContent = field.label;
   document.getElementById('edit-modal').classList.add('visible');
-  setTimeout(() => document.getElementById('edit-modal-input').focus(), 100);
+
+  if (field.max) {
+    // Star picker mode
+    document.getElementById('star-picker-wrap').style.display = 'block';
+    document.getElementById('text-input-wrap').style.display = 'none';
+    const current = parseInt(data[key]) || 0;
+    starPickerValue = current;
+    renderStarPicker(field, current);
+  } else {
+    // Text input mode
+    document.getElementById('star-picker-wrap').style.display = 'none';
+    document.getElementById('text-input-wrap').style.display = 'block';
+    document.getElementById('edit-modal-hint').textContent = 'e.g. ' + getPlaceholder(key);
+    document.getElementById('edit-modal-input').value = data[key] || '';
+    setTimeout(() => document.getElementById('edit-modal-input').focus(), 100);
+  }
+}
+
+function renderStarPicker(field, selected) {
+  const picker = document.getElementById('star-picker');
+  picker.innerHTML = '';
+  for (let i = 1; i <= field.max; i++) {
+    const s = document.createElement('span');
+    s.className = 'star-pick' + (i <= selected ? ' active' : '');
+    s.textContent = '★';
+    s.onclick = () => {
+      starPickerValue = i;
+      document.querySelectorAll('.star-pick').forEach((el, idx) => {
+        el.classList.toggle('active', idx < i);
+      });
+      updateStarPickLabel(field, i);
+    };
+    picker.appendChild(s);
+  }
+  updateStarPickLabel(field, selected);
+}
+
+function updateStarPickLabel(field, num) {
+  let label = '';
+  if (!num) { document.getElementById('star-pick-label').textContent = 'Tap to rate'; return; }
+  if (field.key === 'quality') label = QUALITY_LABELS[num];
+  else if (field.key === 'quantity') label = QUANTITY_LABELS[num];
+  else label = ENERGY_LABELS[num];
+  document.getElementById('star-pick-label').textContent = num + '/' + field.max + ' – ' + label;
 }
 
 function getPlaceholder(key) {
@@ -883,34 +972,29 @@ function getPlaceholder(key) {
 function closeEditModal() {
   document.getElementById('edit-modal').classList.remove('visible');
   editingKey = null;
+  starPickerValue = 0;
 }
 
 function confirmEdit() {
-  const val = document.getElementById('edit-modal-input').value.trim();
-  if (!val) { data[editingKey] = null; }
-  else {
-    const field = FIELDS.find(f => f.key === editingKey);
-    if (field && field.max) {
-      const num = parseInt(val);
-      if (!isNaN(num) && num >= 1 && num <= field.max) {
-        let label = '';
-        if (editingKey === 'quality') label = QUALITY_LABELS[num];
-        else if (editingKey === 'quantity') label = QUANTITY_LABELS[num];
-        else label = ENERGY_LABELS[num];
-        data[editingKey] = num + '/' + field.max + ' \u2013 ' + label;
-      } else {
-        showToast('Enter a number between 1 and ' + field.max);
-        return;
-      }
-    } else {
-      data[editingKey] = val;
-    }
+  const field = FIELDS.find(f => f.key === editingKey);
+
+  if (field.max) {
+    if (!starPickerValue) { closeEditModal(); return; }
+    let label = '';
+    if (field.key === 'quality') label = QUALITY_LABELS[starPickerValue];
+    else if (field.key === 'quantity') label = QUANTITY_LABELS[starPickerValue];
+    else label = ENERGY_LABELS[starPickerValue];
+    data[editingKey] = starPickerValue + '/' + field.max + ' \u2013 ' + label;
+  } else {
+    const val = document.getElementById('edit-modal-input').value.trim();
+    data[editingKey] = val || null;
   }
+
   updateFields();
   closeEditModal();
 }
 
-// Enter key in modal
+// Enter key in text input modal
 document.getElementById('edit-modal-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') confirmEdit();
   if (e.key === 'Escape') closeEditModal();
@@ -1162,7 +1246,7 @@ function toggleListening() {
 
 async function onRecordingDone(transcript) {
   if (!transcript.trim()) {
-    document.getElementById('transcript-box').textContent = 'Tap the mic and speak naturally.';
+    document.getElementById('transcript-box').textContent = 'Tap the mic and speak naturally';
     document.getElementById('processing-bar').classList.remove('visible');
     return;
   }
@@ -1206,7 +1290,7 @@ Be liberal: "around eleven" \u2192 "11:00 PM", "slept 7 hours" \u2192 "7 hrs", "
     Object.assign(data, parsed);
     updateFields();
     document.getElementById('processing-bar').classList.remove('visible');
-    showSummary();
+    showToast('\u2713 Fields updated');
   } catch(err) {
     document.getElementById('processing-bar').classList.remove('visible');
     showToast('Error: ' + err.message);
@@ -1232,10 +1316,22 @@ function closeSummary() { document.getElementById('summary-overlay').classList.r
 // ── Save entry ──
 function saveEntry() {
   const entries = JSON.parse(localStorage.getItem('sleep_entries') || '{}');
-  entries[todayKey] = { ...data, savedAt: new Date().toISOString() };
-  localStorage.setItem('sleep_entries', JSON.stringify(entries));
-  closeSummary();
-  showToast('\u2713 Entry saved for ' + todayKey);
+  if (entries[todayKey]) {
+    showConfirm(
+      'Entry already exists for today. Overwrite it?',
+      () => {
+        entries[todayKey] = { ...data, savedAt: new Date().toISOString() };
+        localStorage.setItem('sleep_entries', JSON.stringify(entries));
+        closeSummary();
+        showToast('\u2713 Entry updated!');
+      }
+    );
+  } else {
+    entries[todayKey] = { ...data, savedAt: new Date().toISOString() };
+    localStorage.setItem('sleep_entries', JSON.stringify(entries));
+    closeSummary();
+    showToast('\u2713 Entry saved!');
+  }
 }
 
 // ── Dashboard ──
@@ -1491,6 +1587,17 @@ function loadEntry(key) {
     switchView('tracker');
     showToast('Loaded entry for ' + key);
   }
+}
+
+// ── Confirm dialog ──
+function showConfirm(msg, onYes) {
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-yes-btn').onclick = () => { closeConfirm(); onYes(); };
+  document.getElementById('confirm-modal').classList.add('visible');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-modal').classList.remove('visible');
 }
 
 // ── Toast ──
