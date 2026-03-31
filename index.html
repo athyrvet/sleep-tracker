@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>Sleep Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
     --bg: #0b0b18;
@@ -22,9 +23,7 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  html {
-    font-size: 18px;
-  }
+  html { font-size: 18px; }
 
   html, body {
     height: 100%;
@@ -34,21 +33,50 @@
     overflow: hidden;
   }
 
-  .screen {
-    display: flex;
+  /* ── Views ── */
+  .view {
+    display: none;
     flex-direction: column;
     height: 100dvh;
-    padding: env(safe-area-inset-top, 12px) 12px 0;
     max-width: 430px;
     margin: 0 auto;
+    padding: env(safe-area-inset-top, 12px) 12px 0;
+  }
+  .view.active { display: flex; }
+
+  /* ── Nav tabs ── */
+  .nav-tabs {
+    flex-shrink: 0;
+    display: flex;
+    gap: 4px;
+    padding: 2px 0 4px;
   }
 
-  /* Header */
+  .nav-tab {
+    flex: 1;
+    padding: 7px 0;
+    border: none;
+    border-radius: 10px;
+    background: var(--soft);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .nav-tab.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+  }
+
+  /* ── Header ── */
   .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 2px 8px;
+    padding: 2px 2px 4px;
     flex-shrink: 0;
   }
 
@@ -89,7 +117,7 @@
     font-size: 0.6rem; font-weight: 500; color: var(--accent2);
   }
 
-  /* Sections */
+  /* ── Sections ── */
   .sections {
     flex: 1;
     overflow: hidden;
@@ -117,15 +145,19 @@
 
   .fields-grid.cols-2 { grid-template-columns: 1fr 1fr; }
 
-  /* Field pill */
+  /* ── Field pill ── */
   .field {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--r);
-    padding: 7px 9px;
+    padding: 5px 9px;
     transition: border-color 0.2s, background 0.2s;
     overflow: hidden;
+    cursor: pointer;
+    position: relative;
   }
+
+  .field:active { opacity: 0.75; }
 
   .field.filled {
     border-color: rgba(52,211,153,0.25);
@@ -159,6 +191,13 @@
 
   .field.rating .field-val { font-size: 1.01rem; }
 
+  .edit-hint {
+    position: absolute;
+    top: 5px; right: 7px;
+    font-size: 0.55rem;
+    color: rgba(255,255,255,0.2);
+  }
+
   .stars {
     display: flex;
     gap: 2px;
@@ -174,21 +213,21 @@
 
   .star.on { background: var(--accent2); }
 
-  /* Transcript */
+  /* ── Transcript ── */
   .transcript-strip {
     flex-shrink: 0;
     background: rgba(124,106,247,0.07);
     border: 1px solid rgba(124,106,247,0.15);
     border-radius: 10px;
-    padding: 6px 12px;
+    padding: 5px 12px;
     font-size: 0.98rem;
     color: #ffffff;
     font-style: italic;
     line-height: 1.4;
-    min-height: 30px;
-    max-height: 42px;
+    min-height: 28px;
+    max-height: 38px;
     overflow: hidden;
-    margin: 4px 0 2px;
+    margin: 2px 0 1px;
   }
 
   .processing-bar {
@@ -208,25 +247,25 @@
     50% { opacity: 1; }
   }
 
-  /* Bottom bar */
+  /* ── Bottom bar ── */
   .bottom-bar {
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
-    padding: 6px 0 calc(env(safe-area-inset-bottom, 8px) + 8px);
+    gap: 10px;
+    padding: 3px 0 calc(env(safe-area-inset-bottom, 6px) + 4px);
   }
 
   .voice-status {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--accent2);
-    min-width: 120px;
+    min-width: 100px;
     text-align: center;
   }
 
   .voice-btn {
-    width: 56px; height: 56px;
+    width: 52px; height: 52px;
     border-radius: 50%;
     border: none;
     cursor: pointer;
@@ -235,7 +274,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     transition: transform 0.12s;
     flex-shrink: 0;
   }
@@ -252,19 +291,81 @@
     100% { box-shadow: 0 0 0 0 rgba(124,106,247,0), 0 3px 10px rgba(0,0,0,0.5); }
   }
 
-  .review-btn {
+  .bar-btn {
     background: var(--soft);
     color: var(--muted);
     border: none;
     border-radius: 10px;
-    padding: 10px 14px;
+    padding: 9px 12px;
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.72rem;
+    font-size: 0.65rem;
     font-weight: 500;
     cursor: pointer;
   }
 
-  /* Summary */
+  .bar-btn.whoop-connected {
+    background: rgba(52,211,153,0.15);
+    color: var(--success);
+  }
+
+  /* ── Edit modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 300;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.visible { display: flex; }
+
+  .modal-box {
+    background: var(--surface);
+    border: 1px solid rgba(124,106,247,0.25);
+    border-radius: 20px;
+    padding: 20px;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .modal-title {
+    font-size: 0.85rem;
+    color: var(--accent2);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  .modal-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid rgba(124,106,247,0.3);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    margin-bottom: 14px;
+  }
+
+  .modal-hint {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 14px;
+    line-height: 1.4;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* ── Summary sheet ── */
   .summary-overlay {
     display: none;
     position: fixed;
@@ -343,7 +444,116 @@
 
   .btn-ghost { background: var(--soft); color: var(--muted); }
   .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
+  .btn-danger { background: rgba(239,68,68,0.2); color: #f87171; }
 
+  /* ── Dashboard ── */
+  .dash-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 20px;
+  }
+
+  .dash-header {
+    padding: 6px 2px 10px;
+    flex-shrink: 0;
+  }
+
+  .dash-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    background: linear-gradient(135deg, #a78bfa, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .dash-header p {
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .dash-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 12px 14px;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
+    font-weight: 500;
+    color: #fff;
+    margin-top: 3px;
+  }
+
+  .stat-sub {
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+
+  .chart-title {
+    font-size: 0.75rem;
+    color: var(--accent2);
+    font-weight: 500;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .chart-wrap { position: relative; height: 160px; }
+
+  .no-data {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+
+  .entries-list { margin-top: 8px; }
+
+  .entry-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+  }
+
+  .entry-date { font-size: 0.78rem; color: var(--text); }
+  .entry-meta { font-size: 0.7rem; color: var(--muted); }
+  .entry-score {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent2);
+  }
+
+  /* ── Toast ── */
   .toast {
     position: fixed;
     top: 16px; left: 50%;
@@ -354,7 +564,7 @@
     padding: 8px 20px;
     font-size: 0.78rem;
     color: var(--text);
-    z-index: 300;
+    z-index: 400;
     transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
     white-space: nowrap;
   }
@@ -364,7 +574,8 @@
 </head>
 <body>
 
-<div class="screen">
+<!-- ══════════════ TRACKER VIEW ══════════════ -->
+<div class="view active" id="view-tracker">
 
   <div class="header">
     <div class="header-left">
@@ -388,23 +599,26 @@
   </div>
 
   <div class="sections">
-
     <div class="section-block">
       <div class="section-label">Times</div>
       <div class="fields-grid cols-2">
-        <div class="field" id="card-bedtime">
+        <div class="field" id="card-bedtime" onclick="editField('bedtime')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Went to bed</div>
           <div class="field-val empty" id="val-bedtime">—</div>
         </div>
-        <div class="field" id="card-asleep">
+        <div class="field" id="card-asleep" onclick="editField('asleep')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Fell asleep</div>
           <div class="field-val empty" id="val-asleep">—</div>
         </div>
-        <div class="field" id="card-wakeup">
+        <div class="field" id="card-wakeup" onclick="editField('wakeup')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Woke up</div>
           <div class="field-val empty" id="val-wakeup">—</div>
         </div>
-        <div class="field" id="card-outofbed">
+        <div class="field" id="card-outofbed" onclick="editField('outofbed')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Out of bed</div>
           <div class="field-val empty" id="val-outofbed">—</div>
         </div>
@@ -414,23 +628,28 @@
     <div class="section-block">
       <div class="section-label">Sleep Stats</div>
       <div class="fields-grid cols-2">
-        <div class="field" id="card-hours">
+        <div class="field" id="card-hours" onclick="editField('hours')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Hours slept</div>
           <div class="field-val empty" id="val-hours">—</div>
         </div>
-        <div class="field" id="card-awakenings">
+        <div class="field" id="card-awakenings" onclick="editField('awakenings')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Times woken</div>
           <div class="field-val empty" id="val-awakenings">—</div>
         </div>
-        <div class="field" id="card-awake-time">
+        <div class="field" id="card-awake-time" onclick="editField('awake-time')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Awake after onset</div>
           <div class="field-val empty" id="val-awake-time">—</div>
         </div>
-        <div class="field" id="card-snooze">
+        <div class="field" id="card-snooze" onclick="editField('snooze')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Alarm snoozes</div>
           <div class="field-val empty" id="val-snooze">—</div>
         </div>
-        <div class="field" id="card-naps" style="grid-column:span 2">
+        <div class="field" id="card-naps" style="grid-column:span 2" onclick="editField('naps')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Naps yesterday</div>
           <div class="field-val empty" id="val-naps">—</div>
         </div>
@@ -440,35 +659,40 @@
     <div class="section-block">
       <div class="section-label">Ratings</div>
       <div class="fields-grid cols-2">
-        <div class="field rating" id="card-quality">
+        <div class="field rating" id="card-quality" onclick="editField('quality')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Sleep quality /5</div>
           <div class="field-val empty" id="val-quality">—</div>
           <div class="stars" id="stars-quality">
             <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
           </div>
         </div>
-        <div class="field rating" id="card-quantity">
+        <div class="field rating" id="card-quantity" onclick="editField('quantity')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Sleep quantity /4</div>
           <div class="field-val empty" id="val-quantity">—</div>
           <div class="stars" id="stars-quantity">
             <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
           </div>
         </div>
-        <div class="field rating" id="card-energy-morning">
+        <div class="field rating" id="card-energy-morning" onclick="editField('energy-morning')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Morning energy /5</div>
           <div class="field-val empty" id="val-energy-morning">—</div>
           <div class="stars" id="stars-energy-morning">
             <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
           </div>
         </div>
-        <div class="field rating" id="card-energy-afternoon">
+        <div class="field rating" id="card-energy-afternoon" onclick="editField('energy-afternoon')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Afternoon energy /5</div>
           <div class="field-val empty" id="val-energy-afternoon">—</div>
           <div class="stars" id="stars-energy-afternoon">
             <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
           </div>
         </div>
-        <div class="field rating" id="card-energy-evening" style="grid-column:span 2">
+        <div class="field rating" id="card-energy-evening" style="grid-column:span 2" onclick="editField('energy-evening')">
+          <div class="edit-hint">✎</div>
           <div class="field-lbl">Evening energy /5</div>
           <div class="field-val empty" id="val-energy-evening">—</div>
           <div class="stars" id="stars-energy-evening">
@@ -477,24 +701,46 @@
         </div>
       </div>
     </div>
-
   </div>
-
-<button id="whoop-btn" class="review-btn" style="width:100%;margin-bottom:4px;" onclick="connectWhoop()">Connect Whoop</button>
 
   <div class="transcript-strip" id="transcript-box">Tap the mic and speak naturally.</div>
   <div class="processing-bar" id="processing-bar"></div>
 
   <div class="bottom-bar">
-    <div class="voice-status" id="voice-status">Tap mic to record</div>
+    <button class="bar-btn" id="whoop-btn" onclick="whoopAction()">Connect Whoop</button>
     <button class="voice-btn" id="voice-btn" onclick="toggleListening()">
       <span id="mic-icon">🎙️</span>
     </button>
-    <button class="review-btn" onclick="showSummary()">Review</button>
+    <button class="bar-btn" onclick="showSummary()">Review</button>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchView('tracker')">Today</button>
+    <button class="nav-tab" onclick="switchView('dashboard')">Dashboard</button>
   </div>
 
 </div>
 
+<!-- ══════════════ DASHBOARD VIEW ══════════════ -->
+<div class="view" id="view-dashboard">
+
+  <div class="dash-header">
+    <h2>Dashboard</h2>
+    <p id="dash-sub">Loading entries…</p>
+  </div>
+
+  <div class="dash-scroll" id="dash-scroll">
+    <div id="dash-content"></div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab" onclick="switchView('tracker')">Today</button>
+    <button class="nav-tab active" onclick="switchView('dashboard')">Dashboard</button>
+  </div>
+
+</div>
+
+<!-- ══════════════ SUMMARY SHEET ══════════════ -->
 <div class="summary-overlay" id="summary-overlay">
   <div class="summary-sheet">
     <div class="summary-handle"></div>
@@ -508,11 +754,29 @@
   </div>
 </div>
 
+<!-- ══════════════ EDIT MODAL ══════════════ -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="edit-modal-title">Edit field</div>
+    <div class="modal-hint" id="edit-modal-hint"></div>
+    <input class="modal-input" id="edit-modal-input" type="text" autocomplete="off"/>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Constants ──
 const WHOOP_CLIENT_ID = 'fce442df-f296-415c-b7ee-f2d98572cb8f';
 const WHOOP_REDIRECT_URI = 'https://athyrvet.github.io/sleep-tracker';
+const WHOOP_AUTH_URL = 'https://api.prod.whoop.com/oauth/oauth2/auth';
+const WHOOP_TOKEN_URL = 'https://whoop-auth.old-bar-46c9.workers.dev';
+const WHOOP_SCOPES = 'read:sleep read:recovery offline';
+
 const FIELDS = [
   { key: 'bedtime',          label: 'Went to bed at' },
   { key: 'asleep',           label: 'Fell asleep at' },
@@ -523,17 +787,136 @@ const FIELDS = [
   { key: 'awake-time',       label: 'Awake after sleep onset' },
   { key: 'snooze',           label: 'Alarm snoozes' },
   { key: 'naps',             label: 'Naps yesterday' },
-  { key: 'quality',          label: 'Sleep quality', max: 5 },
-  { key: 'quantity',         label: 'Sleep quantity', max: 4 },
-  { key: 'energy-morning',   label: 'Morning energy', max: 5 },
-  { key: 'energy-afternoon', label: 'Afternoon energy', max: 5 },
-  { key: 'energy-evening',   label: 'Evening energy', max: 5 },
+  { key: 'quality',          label: 'Sleep quality', max: 5, hint: 'Enter 1–5 (1=Very poor, 3=OK, 5=Very good)' },
+  { key: 'quantity',         label: 'Sleep quantity', max: 4, hint: 'Enter 1–4 (1=Very inadequate, 3=About right, 4=Too much)' },
+  { key: 'energy-morning',   label: 'Morning energy', max: 5, hint: 'Enter 1–5 (1=Very low, 3=Average, 5=Very high)' },
+  { key: 'energy-afternoon', label: 'Afternoon energy', max: 5, hint: 'Enter 1–5 (1=Very low, 3=Average, 5=Very high)' },
+  { key: 'energy-evening',   label: 'Evening energy', max: 5, hint: 'Enter 1–5 (1=Very low, 3=Average, 5=Very high)' },
 ];
 
-const WHOOP_AUTH_URL = 'https://api.prod.whoop.com/oauth/oauth2/auth';
-const WHOOP_TOKEN_URL = 'https://whoop-auth.old-bar-46c9.workers.dev';
-const WHOOP_SCOPES = 'read:sleep read:recovery offline';
+const QUALITY_LABELS  = ['','Very poor','Poor','OK','Good','Very good'];
+const QUANTITY_LABELS = ['','Very inadequate','Inadequate','About right','Too much'];
+const ENERGY_LABELS   = ['','Very low','Low','Average','High','Very high'];
 
+let data = {};
+let recognition = null;
+let isListening = false;
+let editingKey = null;
+let charts = {};
+
+// ── Date ──
+const now = new Date();
+const todayKey = now.toISOString().slice(0,10);
+document.getElementById('today-date').textContent =
+  now.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+document.getElementById('summary-date-label').textContent =
+  now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+
+// ── View switching ──
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach((t,i) => {
+    t.classList.toggle('active', (name === 'tracker' && i === 0) || (name === 'dashboard' && i % 2 === 1));
+  });
+  if (name === 'dashboard') renderDashboard();
+}
+
+// ── Progress ──
+function updateProgress() {
+  const filled = FIELDS.filter(f => data[f.key]).length;
+  document.getElementById('progress-count').textContent = filled + '/14';
+  const offset = 113.1 - (filled / 14) * 113.1;
+  document.getElementById('progress-fill').style.strokeDashoffset = offset;
+}
+
+updateProgress();
+
+// ── Stars ──
+function updateStars(key, num) {
+  const c = document.getElementById('stars-' + key);
+  if (!c) return;
+  c.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('on', i < num));
+}
+
+// ── Update fields ──
+function updateFields() {
+  FIELDS.forEach(f => {
+    const val = data[f.key];
+    const el = document.getElementById('val-' + f.key);
+    const card = document.getElementById('card-' + f.key);
+    if (!el) return;
+    if (val) {
+      el.textContent = val;
+      el.classList.remove('empty');
+      card.classList.add('filled');
+      if (f.max) {
+        const num = parseInt(val);
+        if (!isNaN(num)) updateStars(f.key, num);
+      }
+    } else {
+      el.textContent = '—';
+      el.classList.add('empty');
+      card.classList.remove('filled');
+    }
+  });
+  updateProgress();
+}
+
+// ── Edit modal ──
+function editField(key) {
+  const field = FIELDS.find(f => f.key === key);
+  editingKey = key;
+  document.getElementById('edit-modal-title').textContent = 'Edit: ' + field.label;
+  document.getElementById('edit-modal-hint').textContent = field.hint || (field.max ? '' : 'e.g. ' + getPlaceholder(key));
+  document.getElementById('edit-modal-input').value = data[key] || '';
+  document.getElementById('edit-modal').classList.add('visible');
+  setTimeout(() => document.getElementById('edit-modal-input').focus(), 100);
+}
+
+function getPlaceholder(key) {
+  const p = { bedtime:'11:30 PM', asleep:'12:00 AM', wakeup:'7:00 AM', outofbed:'7:30 AM',
+    hours:'7 hrs', awakenings:'2 times', 'awake-time':'15 min', snooze:'0 times', naps:'0 naps' };
+  return p[key] || '';
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('visible');
+  editingKey = null;
+}
+
+function confirmEdit() {
+  const val = document.getElementById('edit-modal-input').value.trim();
+  if (!val) { data[editingKey] = null; }
+  else {
+    const field = FIELDS.find(f => f.key === editingKey);
+    if (field && field.max) {
+      const num = parseInt(val);
+      if (!isNaN(num) && num >= 1 && num <= field.max) {
+        let label = '';
+        if (editingKey === 'quality') label = QUALITY_LABELS[num];
+        else if (editingKey === 'quantity') label = QUANTITY_LABELS[num];
+        else label = ENERGY_LABELS[num];
+        data[editingKey] = num + '/' + field.max + ' \u2013 ' + label;
+      } else {
+        showToast('Enter a number between 1 and ' + field.max);
+        return;
+      }
+    } else {
+      data[editingKey] = val;
+    }
+  }
+  updateFields();
+  closeEditModal();
+}
+
+// Enter key in modal
+document.getElementById('edit-modal-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmEdit();
+  if (e.key === 'Escape') closeEditModal();
+});
+
+// ── Whoop ──
 function generateCodeVerifier() {
   const array = new Uint32Array(56);
   crypto.getRandomValues(array);
@@ -542,8 +925,8 @@ function generateCodeVerifier() {
 
 function generateCodeChallenge(verifier) {
   const encoder = new TextEncoder();
-  const data = encoder.encode(verifier);
-  return crypto.subtle.digest('SHA-256', data).then(buffer => {
+  const d = encoder.encode(verifier);
+  return crypto.subtle.digest('SHA-256', d).then(buffer => {
     return btoa(String.fromCharCode(...new Uint8Array(buffer)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
   });
@@ -551,10 +934,10 @@ function generateCodeChallenge(verifier) {
 
 async function connectWhoop() {
   const verifier = generateCodeVerifier();
-  sessionStorage.setItem('whoop_verifier', verifier);
+  localStorage.setItem('whoop_verifier', verifier);
   const challenge = await generateCodeChallenge(verifier);
   const state = crypto.randomUUID();
-  sessionStorage.setItem('whoop_state', state);
+  localStorage.setItem('whoop_state', state);
   const params = new URLSearchParams({
     client_id: WHOOP_CLIENT_ID,
     redirect_uri: WHOOP_REDIRECT_URI,
@@ -562,9 +945,18 @@ async function connectWhoop() {
     scope: WHOOP_SCOPES,
     code_challenge: challenge,
     code_challenge_method: 'S256',
-    state: state
+    state
   });
   window.location.href = WHOOP_AUTH_URL + '?' + params.toString();
+}
+
+function whoopAction() {
+  const token = localStorage.getItem('whoop_token');
+  if (token) {
+    fetchWhoopSleep();
+  } else {
+    connectWhoop();
+  }
 }
 
 async function handleWhoopCallback() {
@@ -574,11 +966,10 @@ async function handleWhoopCallback() {
     if (!code) return;
 
     window.history.replaceState({}, '', window.location.pathname);
-
-    const verifier = sessionStorage.getItem('whoop_verifier');
-    if (!verifier) { showToast('Session expired, try again'); return; }
-
     showToast('Connecting to Whoop…');
+
+    const verifier = localStorage.getItem('whoop_verifier');
+    if (!verifier) { showToast('Session expired, try again'); return; }
 
     const res = await fetch(WHOOP_TOKEN_URL, {
       method: 'POST',
@@ -593,128 +984,129 @@ async function handleWhoopCallback() {
     });
 
     const token = await res.json();
+    if (token.error) { showToast('Whoop error: ' + token.error); return; }
+    if (!token.access_token) { showToast('Whoop login failed'); return; }
 
-    if (!token.access_token) {
-      showToast('Whoop error: ' + (token.error || 'unknown'));
-      console.error('Token error:', token);
-      return;
-    }
+    localStorage.setItem('whoop_token', token.access_token);
+    if (token.refresh_token) localStorage.setItem('whoop_refresh', token.refresh_token);
+    localStorage.setItem('whoop_expires', Date.now() + (token.expires_in || 3600) * 1000);
 
-    sessionStorage.setItem('whoop_token', token.access_token);
-    document.getElementById('whoop-btn').textContent = '✓ Whoop Connected';
-    document.getElementById('whoop-btn').style.opacity = '0.6';
+    updateWhoopBtn(true);
     await fetchWhoopSleep();
 
   } catch(err) {
     showToast('Whoop failed: ' + err.message);
-    console.error('Callback error:', err);
   }
 }
+
+async function refreshWhoopToken() {
+  const refresh = localStorage.getItem('whoop_refresh');
+  if (!refresh) return false;
+  try {
+    const res = await fetch(WHOOP_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        grant_type: 'refresh_token',
+        refresh_token: refresh,
+        client_id: WHOOP_CLIENT_ID,
+      })
+    });
+    const token = await res.json();
+    if (!token.access_token) return false;
+    localStorage.setItem('whoop_token', token.access_token);
+    if (token.refresh_token) localStorage.setItem('whoop_refresh', token.refresh_token);
+    localStorage.setItem('whoop_expires', Date.now() + (token.expires_in || 3600) * 1000);
+    return true;
+  } catch { return false; }
+}
+
+async function getValidToken() {
+  const expires = parseInt(localStorage.getItem('whoop_expires') || '0');
+  if (Date.now() > expires - 60000) {
+    const ok = await refreshWhoopToken();
+    if (!ok) { localStorage.removeItem('whoop_token'); return null; }
+  }
+  return localStorage.getItem('whoop_token');
+}
+
 async function fetchWhoopSleep() {
-  const token = sessionStorage.getItem('whoop_token');
-  if (!token) { showToast('Not connected to Whoop'); return; }
+  const token = await getValidToken();
+  if (!token) { showToast('Please reconnect Whoop'); updateWhoopBtn(false); return; }
 
-  const res = await fetch(WHOOP_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'fetch_sleep',
-      access_token: token
-    })
-  });
+  showToast('Fetching Whoop data…');
 
-  const json = await res.json();
-  const sleep = json.records?.[0];
-  if (!sleep) { showToast('No sleep data found'); return; }
+  try {
+    const res = await fetch(WHOOP_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'fetch_sleep', access_token: token })
+    });
 
-  const s = sleep.score;
-  const start = new Date(sleep.start);
-  const end = new Date(sleep.end);
+    const json = await res.json();
+    const sleep = json.records?.[0];
+    if (!sleep) { showToast('No sleep data found'); return; }
 
-  function fmt(d) {
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  }
+    const s = sleep.score;
+    const start = new Date(sleep.start);
+    const end = new Date(sleep.end);
 
-  function perfToScale(pct) {
-    if (pct >= 81) return '5/5 – Very good';
-    if (pct >= 61) return '4/5 – Good';
-    if (pct >= 41) return '3/5 – OK';
-    if (pct >= 21) return '2/5 – Poor';
-    return '1/5 – Very poor';
-  }
-
-  const totalSecs = s.stage_summary.total_in_bed_time_milli / 1000;
-  const awakeSecs = s.stage_summary.total_awake_time_milli / 1000;
-  const sleepHrs = ((totalSecs - awakeSecs) / 3600).toFixed(1);
-  const awakeMin = Math.round(awakeSecs / 60);
-
-  data['bedtime'] = fmt(start);
-  data['asleep'] = fmt(new Date(start.getTime() + (s.stage_summary.total_awake_time_milli / 2)));
-  data['wakeup'] = fmt(new Date(end.getTime() - (s.stage_summary.total_awake_time_milli / 2)));
-  data['outofbed'] = fmt(end);
-  data['hours'] = sleepHrs + ' hrs';
-  data['awakenings'] = (s.stage_summary.disturbance_count || 0) + ' times';
-  data['awake-time'] = awakeMin + ' min';
-  data['quality'] = perfToScale(s.sleep_performance_percentage);
-  if (sleep.nap) data['naps'] = '1 nap';
-
-  updateFields();
-  showToast('✓ Whoop data loaded');
-  document.getElementById('whoop-btn').textContent = '✓ Whoop Connected';
-  document.getElementById('whoop-btn').style.opacity = '0.6';
-}
-
-// Check for OAuth callback on load
-window.addEventListener('load', () => {
-  handleWhoopCallback();
-  if (sessionStorage.getItem('whoop_token')) {
-    document.getElementById('whoop-btn').textContent = '✓ Whoop Connected';
-    document.getElementById('whoop-btn').style.opacity = '0.6';
-  }
-});
-
-let data = {};
-let recognition = null;
-let isListening = false;
-
-const now = new Date();
-document.getElementById('today-date').textContent =
-  now.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
-document.getElementById('summary-date-label').textContent =
-  now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
-
-function updateProgress() {
-  const filled = FIELDS.filter(f => data[f.key]).length;
-  document.getElementById('progress-count').textContent = filled + '/14';
-  const offset = 113.1 - (filled / 14) * 113.1;
-  document.getElementById('progress-fill').style.strokeDashoffset = offset;
-}
-
-updateProgress();
-
-function updateStars(key, num) {
-  const c = document.getElementById('stars-' + key);
-  if (!c) return;
-  c.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('on', i < num));
-}
-
-function updateFields() {
-  FIELDS.forEach(f => {
-    const val = data[f.key];
-    if (!val) return;
-    const el = document.getElementById('val-' + f.key);
-    const card = document.getElementById('card-' + f.key);
-    el.textContent = val;
-    el.classList.remove('empty');
-    card.classList.add('filled');
-    if (f.max) {
-      const num = parseInt(val);
-      if (!isNaN(num)) updateStars(f.key, num);
+    function fmt(d) {
+      return d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
     }
-  });
-  updateProgress();
+
+    function perfToScale(pct) {
+      if (pct >= 81) return '5/5 \u2013 Very good';
+      if (pct >= 61) return '4/5 \u2013 Good';
+      if (pct >= 41) return '3/5 \u2013 OK';
+      if (pct >= 21) return '2/5 \u2013 Poor';
+      return '1/5 \u2013 Very poor';
+    }
+
+    function quantityFromHours(hrs) {
+      if (hrs >= 9) return '4/4 \u2013 Too much';
+      if (hrs >= 7) return '3/4 \u2013 About right';
+      if (hrs >= 5) return '2/4 \u2013 Inadequate';
+      return '1/4 \u2013 Very inadequate';
+    }
+
+    const totalMs = new Date(sleep.end) - new Date(sleep.start);
+    const awakeSecs = s.stage_summary.total_awake_time_milli / 1000;
+    const sleepHrs = parseFloat(((totalMs / 3600000) - (awakeSecs / 3600)).toFixed(1));
+    const awakeMin = Math.round(awakeSecs / 60);
+
+    data['bedtime'] = fmt(start);
+    data['asleep'] = fmt(new Date(start.getTime() + s.stage_summary.total_awake_time_milli / 2));
+    data['wakeup'] = fmt(new Date(end.getTime() - s.stage_summary.total_awake_time_milli / 2));
+    data['outofbed'] = fmt(end);
+    data['hours'] = sleepHrs + ' hrs';
+    data['awakenings'] = (s.stage_summary.disturbance_count || 0) + ' times';
+    data['awake-time'] = awakeMin + ' min';
+    data['quality'] = perfToScale(s.sleep_performance_percentage);
+    data['quantity'] = quantityFromHours(sleepHrs);
+    if (sleep.nap) data['naps'] = '1 nap';
+
+    updateFields();
+    showToast('\u2713 Whoop data loaded');
+    updateWhoopBtn(true);
+
+  } catch(err) {
+    showToast('Sleep fetch failed: ' + err.message);
+  }
 }
 
+function updateWhoopBtn(connected) {
+  const btn = document.getElementById('whoop-btn');
+  if (connected) {
+    btn.textContent = '↺ Refresh';
+    btn.classList.add('whoop-connected');
+  } else {
+    btn.textContent = 'Connect Whoop';
+    btn.classList.remove('whoop-connected');
+  }
+}
+
+// ── Speech ──
 function setupRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { showToast('Use Safari on iOS for voice input'); return null; }
@@ -727,7 +1119,6 @@ function setupRecognition() {
   r.onstart = () => {
     final = '';
     document.getElementById('transcript-box').textContent = 'Listening…';
-    document.getElementById('voice-status').textContent = 'Listening — speak freely';
     document.getElementById('voice-btn').classList.add('listening');
     document.getElementById('mic-icon').textContent = '⏹️';
   };
@@ -741,12 +1132,18 @@ function setupRecognition() {
     document.getElementById('transcript-box').textContent = (final + interim) || 'Listening…';
   };
 
-  r.onerror = e => { stopListening(); showToast('Mic error: ' + e.error); };
+  r.onerror = e => { stopListeningClean(); showToast('Mic error: ' + e.error); };
   r.onend = () => {
     if (isListening) { try { r.start(); } catch(e) {} }
     else onRecordingDone(final);
   };
   return r;
+}
+
+function stopListeningClean() {
+  isListening = false;
+  document.getElementById('voice-btn').classList.remove('listening');
+  document.getElementById('mic-icon').textContent = '🎙️';
 }
 
 function toggleListening() {
@@ -758,16 +1155,14 @@ function toggleListening() {
   } else {
     isListening = false;
     if (recognition) { try { recognition.stop(); } catch(e) {} }
-    document.getElementById('voice-btn').classList.remove('listening');
-    document.getElementById('mic-icon').textContent = '🎙️';
-    document.getElementById('voice-status').textContent = 'Processing…';
+    stopListeningClean();
     document.getElementById('processing-bar').classList.add('visible');
   }
 }
 
 async function onRecordingDone(transcript) {
   if (!transcript.trim()) {
-    document.getElementById('voice-status').textContent = 'Tap mic to record';
+    document.getElementById('transcript-box').textContent = 'Tap the mic and speak naturally.';
     document.getElementById('processing-bar').classList.remove('visible');
     return;
   }
@@ -793,14 +1188,14 @@ Return ONLY valid JSON with these exact keys (omit keys you cannot determine):
   "awake-time": "X min",
   "snooze": "X times",
   "naps": "X naps",
-  "quality": "X/5 – Label" (1=Very poor,2=Poor,3=OK,4=Good,5=Very good),
-  "quantity": "X/4 – Label" (1=Very inadequate,2=Inadequate,3=About right,4=Too much),
-  "energy-morning": "X/5 – Label",
-  "energy-afternoon": "X/5 – Label",
-  "energy-evening": "X/5 – Label"
+  "quality": "X/5 \u2013 Label" (1=Very poor,2=Poor,3=OK,4=Good,5=Very good),
+  "quantity": "X/4 \u2013 Label" (1=Very inadequate,2=Inadequate,3=About right,4=Too much),
+  "energy-morning": "X/5 \u2013 Label",
+  "energy-afternoon": "X/5 \u2013 Label",
+  "energy-evening": "X/5 \u2013 Label"
 }
 
-Be liberal: "around eleven" → "11:00 PM", "slept 7 hours" → "7 hrs", "woke twice" → "2 times", "pretty good" → "4/5 – Good". Return ONLY JSON.`,
+Be liberal: "around eleven" \u2192 "11:00 PM", "slept 7 hours" \u2192 "7 hrs", "woke twice" \u2192 "2 times", "pretty good" \u2192 "4/5 \u2013 Good". Return ONLY JSON.`,
         messages: [{ role: "user", content: transcript }]
       })
     });
@@ -811,15 +1206,14 @@ Be liberal: "around eleven" → "11:00 PM", "slept 7 hours" → "7 hrs", "woke t
     Object.assign(data, parsed);
     updateFields();
     document.getElementById('processing-bar').classList.remove('visible');
-    document.getElementById('voice-status').textContent = 'Tap mic to add more';
     showSummary();
   } catch(err) {
     document.getElementById('processing-bar').classList.remove('visible');
-    document.getElementById('voice-status').textContent = 'Error — try again';
     showToast('Error: ' + err.message);
   }
 }
 
+// ── Summary ──
 function showSummary() {
   const rows = document.getElementById('summary-rows');
   rows.innerHTML = '';
@@ -835,18 +1229,303 @@ function showSummary() {
 
 function closeSummary() { document.getElementById('summary-overlay').classList.remove('visible'); }
 
+// ── Save entry ──
 function saveEntry() {
+  const entries = JSON.parse(localStorage.getItem('sleep_entries') || '{}');
+  entries[todayKey] = { ...data, savedAt: new Date().toISOString() };
+  localStorage.setItem('sleep_entries', JSON.stringify(entries));
   closeSummary();
-  showToast('✓ Sleep entry saved!');
-  document.getElementById('voice-status').textContent = 'Entry saved ✓';
+  showToast('\u2713 Entry saved for ' + todayKey);
 }
 
+// ── Dashboard ──
+function getAllEntries() {
+  return JSON.parse(localStorage.getItem('sleep_entries') || '{}');
+}
+
+function parseHours(val) {
+  if (!val) return null;
+  const m = parseFloat(val);
+  return isNaN(m) ? null : m;
+}
+
+function parseRating(val) {
+  if (!val) return null;
+  const m = parseInt(val);
+  return isNaN(m) ? null : m;
+}
+
+function renderDashboard() {
+  const entries = getAllEntries();
+  const keys = Object.keys(entries).sort();
+  const content = document.getElementById('dash-content');
+  const sub = document.getElementById('dash-sub');
+
+  // Destroy existing charts
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
+  charts = {};
+
+  if (keys.length === 0) {
+    sub.textContent = 'No entries yet';
+    content.innerHTML = '<div class="no-data">Save your first sleep entry on the Today tab to start seeing trends here.</div>';
+    return;
+  }
+
+  sub.textContent = keys.length + ' entr' + (keys.length === 1 ? 'y' : 'ies') + ' recorded';
+
+  // Compute averages
+  const hoursArr = keys.map(k => parseHours(entries[k].hours)).filter(v => v !== null);
+  const qualityArr = keys.map(k => parseRating(entries[k].quality)).filter(v => v !== null);
+  const energyMArr = keys.map(k => parseRating(entries[k]['energy-morning'])).filter(v => v !== null);
+
+  const avg = arr => arr.length ? (arr.reduce((a,b) => a+b, 0) / arr.length).toFixed(1) : '—';
+
+  // Chart colors
+  const C = {
+    purple: 'rgba(124,106,247,0.8)',
+    purpleLight: 'rgba(124,106,247,0.15)',
+    violet: 'rgba(192,132,252,0.8)',
+    violetLight: 'rgba(192,132,252,0.15)',
+    green: 'rgba(52,211,153,0.8)',
+    greenLight: 'rgba(52,211,153,0.15)',
+    yellow: 'rgba(251,191,36,0.8)',
+    yellowLight: 'rgba(251,191,36,0.15)',
+    text: 'rgba(255,255,255,0.5)',
+    grid: 'rgba(255,255,255,0.06)',
+  };
+
+  const baseChartOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1a35', titleColor: '#e8e6f0', bodyColor: '#a78bfa', borderColor: 'rgba(124,106,247,0.3)', borderWidth: 1 } },
+    scales: {
+      x: { ticks: { color: C.text, font: { size: 10 }, maxRotation: 0 }, grid: { color: C.grid } },
+      y: { ticks: { color: C.text, font: { size: 10 } }, grid: { color: C.grid } }
+    }
+  };
+
+  const labels = keys.map(k => {
+    const d = new Date(k + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+  });
+
+  content.innerHTML = `
+    <div class="dash-stats">
+      <div class="stat-card">
+        <div class="stat-label">Avg Sleep</div>
+        <div class="stat-value">${avg(hoursArr)}h</div>
+        <div class="stat-sub">over ${keys.length} nights</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Quality</div>
+        <div class="stat-value">${avg(qualityArr)}<span style="font-size:0.7rem;color:var(--muted)">/5</span></div>
+        <div class="stat-sub">sleep quality score</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Energy AM</div>
+        <div class="stat-value">${avg(energyMArr)}<span style="font-size:0.7rem;color:var(--muted)">/5</span></div>
+        <div class="stat-sub">morning energy</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Entries</div>
+        <div class="stat-value">${keys.length}</div>
+        <div class="stat-sub">nights tracked</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Hours Slept</div>
+      <div class="chart-wrap"><canvas id="chart-hours"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Sleep Quality & Energy (Morning)</div>
+      <div class="chart-wrap"><canvas id="chart-quality"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Weekly Average Hours</div>
+      <div class="chart-wrap"><canvas id="chart-weekly"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Energy vs Hours Slept</div>
+      <div class="chart-wrap"><canvas id="chart-scatter"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Recent Entries</div>
+      <div class="entries-list" id="entries-list"></div>
+    </div>
+  `;
+
+  // Chart 1: Hours line
+  charts.hours = new Chart(document.getElementById('chart-hours'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: keys.map(k => parseHours(entries[k].hours)),
+        borderColor: C.purple,
+        backgroundColor: C.purpleLight,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: C.purple,
+        pointRadius: 3,
+      }]
+    },
+    options: { ...baseChartOpts, scales: { ...baseChartOpts.scales, y: { ...baseChartOpts.scales.y, min: 0, max: 12, ticks: { ...baseChartOpts.scales.y.ticks, stepSize: 2 } } } }
+  });
+
+  // Chart 2: Quality + Energy line
+  charts.quality = new Chart(document.getElementById('chart-quality'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Quality',
+          data: keys.map(k => parseRating(entries[k].quality)),
+          borderColor: C.violet,
+          backgroundColor: C.violetLight,
+          fill: false,
+          tension: 0.4,
+          pointBackgroundColor: C.violet,
+          pointRadius: 3,
+        },
+        {
+          label: 'Energy AM',
+          data: keys.map(k => parseRating(entries[k]['energy-morning'])),
+          borderColor: C.green,
+          backgroundColor: C.greenLight,
+          fill: false,
+          tension: 0.4,
+          pointBackgroundColor: C.green,
+          pointRadius: 3,
+        }
+      ]
+    },
+    options: {
+      ...baseChartOpts,
+      plugins: { ...baseChartOpts.plugins, legend: { display: true, labels: { color: C.text, font: { size: 10 }, boxWidth: 10 } } },
+      scales: { ...baseChartOpts.scales, y: { ...baseChartOpts.scales.y, min: 0, max: 5, ticks: { ...baseChartOpts.scales.y.ticks, stepSize: 1 } } }
+    }
+  });
+
+  // Chart 3: Weekly bar
+  const weeklyMap = {};
+  keys.forEach(k => {
+    const d = new Date(k + 'T12:00:00');
+    const weekStart = new Date(d);
+    weekStart.setDate(d.getDate() - d.getDay());
+    const wk = weekStart.toISOString().slice(0,10);
+    if (!weeklyMap[wk]) weeklyMap[wk] = [];
+    const h = parseHours(entries[k].hours);
+    if (h !== null) weeklyMap[wk].push(h);
+  });
+  const weekKeys = Object.keys(weeklyMap).sort();
+  const weekLabels = weekKeys.map(k => { const d = new Date(k + 'T12:00:00'); return d.toLocaleDateString('en-US', { month:'short', day:'numeric' }); });
+  const weekAvgs = weekKeys.map(k => parseFloat((weeklyMap[k].reduce((a,b)=>a+b,0)/weeklyMap[k].length).toFixed(1)));
+
+  charts.weekly = new Chart(document.getElementById('chart-weekly'), {
+    type: 'bar',
+    data: {
+      labels: weekLabels,
+      datasets: [{
+        data: weekAvgs,
+        backgroundColor: C.purpleLight,
+        borderColor: C.purple,
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: { ...baseChartOpts, scales: { ...baseChartOpts.scales, y: { ...baseChartOpts.scales.y, min: 0, max: 12 } } }
+  });
+
+  // Chart 4: Scatter - energy vs hours
+  const scatterData = keys.map(k => ({
+    x: parseHours(entries[k].hours),
+    y: parseRating(entries[k]['energy-morning'])
+  })).filter(p => p.x !== null && p.y !== null);
+
+  charts.scatter = new Chart(document.getElementById('chart-scatter'), {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        data: scatterData,
+        backgroundColor: C.violet,
+        pointRadius: 5,
+      }]
+    },
+    options: {
+      ...baseChartOpts,
+      scales: {
+        x: { ...baseChartOpts.scales.x, title: { display: true, text: 'Hours slept', color: C.text, font: { size: 10 } }, min: 0, max: 12 },
+        y: { ...baseChartOpts.scales.y, title: { display: true, text: 'Morning energy', color: C.text, font: { size: 10 } }, min: 0, max: 5 }
+      }
+    }
+  });
+
+  // Entries list
+  const list = document.getElementById('entries-list');
+  [...keys].reverse().slice(0, 10).forEach(k => {
+    const e = entries[k];
+    const d = new Date(k + 'T12:00:00');
+    const dateStr = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+    const hrs = e.hours || '—';
+    const q = e.quality ? e.quality.split('/')[0] + '/5' : '—';
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.innerHTML = `<div><div class="entry-date">${dateStr}</div><div class="entry-meta">${hrs} · ${e.awakenings || '—'} awakenings</div></div><div class="entry-score">Quality ${q}</div>`;
+    row.onclick = () => loadEntry(k);
+    list.appendChild(row);
+  });
+}
+
+function loadEntry(key) {
+  const entries = JSON.parse(localStorage.getItem('sleep_entries') || '{}');
+  if (entries[key]) {
+    data = { ...entries[key] };
+    delete data.savedAt;
+    updateFields();
+    switchView('tracker');
+    showToast('Loaded entry for ' + key);
+  }
+}
+
+// ── Toast ──
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// ── Init ──
+window.addEventListener('load', async () => {
+  // Check for OAuth callback
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('code')) {
+    await handleWhoopCallback();
+    return;
+  }
+
+  // Restore Whoop connection state
+  const token = localStorage.getItem('whoop_token');
+  if (token) {
+    updateWhoopBtn(true);
+    // Auto-fetch today's data
+    await fetchWhoopSleep();
+  }
+
+  // Load today's saved entry if exists
+  const entries = JSON.parse(localStorage.getItem('sleep_entries') || '{}');
+  if (entries[todayKey]) {
+    data = { ...entries[todayKey] };
+    delete data.savedAt;
+    updateFields();
+  }
+});
 </script>
 </body>
 </html>
