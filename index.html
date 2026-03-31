@@ -267,21 +267,16 @@
   .star.star-zero {
     font-size: 0.85rem;
     font-weight: 700;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    background: transparent !important;
-    color: var(--accent2) !important;
-    border: none !important;
+    background: transparent;
+    color: var(--accent2);
     border-radius: 0;
     width: 20px;
     height: 20px;
-    flex-shrink: 0;
   }
 
   .star.star-zero.on {
-    background: transparent !important;
-    color: var(--accent2) !important;
+    background: transparent;
+    color: var(--accent2);
   }
 
   .field.rating.confirming {
@@ -805,15 +800,21 @@
             <div class="field rating" id="card-snooze">
               <div class="field-lbl">Alarm snoozes</div>
               <div class="field-val empty" id="val-snooze">—</div>
-              <div class="stars" id="stars-snooze">
-                <div class="star star-zero on" id="zero-snooze" onclick="tapRadioInline('snooze',0)">✕</div><div class="star" onclick="tapRadioInline('snooze',1)"></div><div class="star" onclick="tapRadioInline('snooze',2)"></div><div class="star" onclick="tapRadioInline('snooze',3)"></div><div class="star" onclick="tapRadioInline('snooze',4)"></div><div class="star" onclick="tapRadioInline('snooze',5)"></div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span id="zero-snooze" onclick="tapRadioInline('snooze',0)" style="font-size:0.85rem;font-weight:700;color:var(--accent2);cursor:pointer;line-height:1;width:20px;text-align:center;">✕</span>
+                <div class="stars" id="stars-snooze" style="margin-top:0;">
+                  <div class="star" onclick="tapRadioInline('snooze',1)"></div><div class="star" onclick="tapRadioInline('snooze',2)"></div><div class="star" onclick="tapRadioInline('snooze',3)"></div><div class="star" onclick="tapRadioInline('snooze',4)"></div><div class="star" onclick="tapRadioInline('snooze',5)"></div>
+                </div>
               </div>
             </div>
             <div class="field rating" id="card-naps">
               <div class="field-lbl">Naps yesterday</div>
               <div class="field-val empty" id="val-naps">—</div>
-              <div class="stars" id="stars-naps">
-                <div class="star star-zero on" id="zero-naps" onclick="tapRadioInline('naps',0)">✕</div><div class="star" onclick="tapRadioInline('naps',1)"></div><div class="star" onclick="tapRadioInline('naps',2)"></div><div class="star" onclick="tapRadioInline('naps',3)"></div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span id="zero-naps" onclick="tapRadioInline('naps',0)" style="font-size:0.85rem;font-weight:700;color:var(--accent2);cursor:pointer;line-height:1;width:20px;text-align:center;">✕</span>
+                <div class="stars" id="stars-naps" style="margin-top:0;">
+                  <div class="star" onclick="tapRadioInline('naps',1)"></div><div class="star" onclick="tapRadioInline('naps',2)"></div><div class="star" onclick="tapRadioInline('naps',3)"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -1054,9 +1055,11 @@ function tapRadioInline(key, num) {
       ? (num === 1 ? '1 nap' : num + ' naps')
       : (num === 1 ? '1 snooze' : num + ' snoozes');
 
-  // Update circles — if 0, highlight only the X; if >0, unhighlight X
+  // Toggle X visibility
   const zeroEl = document.getElementById('zero-' + key);
-  if (zeroEl) zeroEl.classList.toggle('on', num === 0);
+  if (zeroEl) zeroEl.style.opacity = num === 0 ? '1' : '0.2';
+
+  // Update circles
   updateStars(key, num);
 
   const card = document.getElementById('card-' + key);
