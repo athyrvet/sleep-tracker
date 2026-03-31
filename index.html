@@ -49,7 +49,7 @@
     flex-shrink: 0;
     display: flex;
     gap: 4px;
-    padding: 4px 0 calc(env(safe-area-inset-bottom, 16px) + 24px);
+    padding: 4px 0 calc(env(safe-area-inset-bottom, 16px) + 28px);
   }
 
   .nav-tab {
@@ -82,7 +82,7 @@
 
   .header-left h1 {
     font-family: 'DM Serif Display', serif;
-    font-size: 1.35rem;
+    font-size: 1.62rem;
     background: linear-gradient(135deg, #a78bfa, #c084fc);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -91,14 +91,14 @@
   }
 
   .header-left .date {
-    font-size: 0.68rem;
+    font-size: 0.82rem;
     color: var(--muted);
     margin-top: 2px;
   }
 
   .progress-ring {
     position: relative;
-    width: 44px; height: 44px;
+    width: 53px; height: 53px;
     flex-shrink: 0;
   }
 
@@ -114,7 +114,7 @@
   .progress-count {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.6rem; font-weight: 500; color: var(--accent2);
+    font-size: 0.72rem; font-weight: 500; color: var(--accent2);
   }
 
   /* ── Sections ── */
@@ -124,10 +124,49 @@
     display: flex;
     flex-direction: column;
     gap: 3px;
+    padding-top: 8px;
     padding-bottom: 2px;
   }
 
-  .section-block { flex: 0 0 auto; }
+  /* Times takes only what it needs */
+  .section-block-fixed { flex: 0 0 auto; }
+
+  /* Two-column block fills all remaining space */
+  .section-block-fill {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cols-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .col-section {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Fields-grid inside col fills remaining height */
+  .col-section .fields-grid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Each field grows equally */
+  .col-section .field {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+  }
 
   .section-label {
     font-size: 0.84rem;
@@ -136,6 +175,7 @@
     color: #ffffff;
     margin-bottom: 3px;
     padding-left: 2px;
+    flex-shrink: 0;
   }
 
   .fields-grid {
@@ -144,6 +184,7 @@
   }
 
   .fields-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .fields-grid.cols-1 { grid-template-columns: 1fr; }
 
   /* ── Field pill ── */
   .field {
@@ -611,23 +652,23 @@
       <div class="date" id="today-date"></div>
     </div>
     <div class="progress-ring">
-      <svg width="44" height="44" viewBox="0 0 44 44">
+      <svg width="53" height="53" viewBox="0 0 53 53">
         <defs>
           <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stop-color="#7c6af7"/>
             <stop offset="100%" stop-color="#c084fc"/>
           </linearGradient>
         </defs>
-        <circle class="track" cx="22" cy="22" r="18"/>
-        <circle class="fill" id="progress-fill" cx="22" cy="22" r="18"
-          stroke-dasharray="113.1" stroke-dashoffset="113.1"/>
+        <circle class="track" cx="26.5" cy="26.5" r="22"/>
+        <circle class="fill" id="progress-fill" cx="26.5" cy="26.5" r="22"
+          stroke-dasharray="138.2" stroke-dashoffset="138.2"/>
       </svg>
       <div class="progress-count" id="progress-count">0/14</div>
     </div>
   </div>
 
   <div class="sections">
-    <div class="section-block">
+    <div class="section-block-fixed">
       <div class="section-label">Times</div>
       <div class="fields-grid cols-2">
         <div class="field" id="card-bedtime" onclick="editField('bedtime')">
@@ -653,80 +694,86 @@
       </div>
     </div>
 
-    <div class="section-block">
-      <div class="section-label">Sleep Stats</div>
-      <div class="fields-grid cols-2">
-        <div class="field" id="card-hours" onclick="editField('hours')">
-          <div class="edit-hint">✎</div>
-          <div class="field-lbl">Hours slept</div>
-          <div class="field-val empty" id="val-hours">—</div>
-        </div>
-        <div class="field" id="card-awakenings" onclick="editField('awakenings')">
-          <div class="edit-hint">✎</div>
-          <div class="field-lbl">Times woken</div>
-          <div class="field-val empty" id="val-awakenings">—</div>
-        </div>
-        <div class="field" id="card-awake-time" onclick="editField('awake-time')">
-          <div class="edit-hint">✎</div>
-          <div class="field-lbl">Awake after onset</div>
-          <div class="field-val empty" id="val-awake-time">—</div>
-        </div>
-        <div class="field" id="card-snooze" onclick="editField('snooze')">
-          <div class="edit-hint">✎</div>
-          <div class="field-lbl">Alarm snoozes</div>
-          <div class="field-val empty" id="val-snooze">—</div>
-        </div>
-        <div class="field" id="card-naps" style="grid-column:span 2" onclick="editField('naps')">
-          <div class="edit-hint">✎</div>
-          <div class="field-lbl">Naps yesterday</div>
-          <div class="field-val empty" id="val-naps">—</div>
-        </div>
-      </div>
-    </div>
+    <div class="section-block-fill">
+      <div class="cols-layout">
 
-    <div class="section-block">
-      <div class="section-label">Ratings</div>
-      <div class="fields-grid cols-2">
-        <div class="field rating" id="card-quality" onclick="editField('quality')">
-          <div class="edit-hint">✎</div>
-          <div class="field-lbl">Sleep quality /5</div>
-          <div class="field-val empty" id="val-quality">—</div>
-          <div class="stars" id="stars-quality">
-            <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+        <div class="col-section">
+          <div class="section-label">Sleep Stats</div>
+          <div class="fields-grid cols-1">
+            <div class="field" id="card-hours" onclick="editField('hours')">
+              <div class="edit-hint">✎</div>
+              <div class="field-lbl">Hours slept</div>
+              <div class="field-val empty" id="val-hours">—</div>
+            </div>
+            <div class="field" id="card-awakenings" onclick="editField('awakenings')">
+              <div class="edit-hint">✎</div>
+              <div class="field-lbl">Times woken</div>
+              <div class="field-val empty" id="val-awakenings">—</div>
+            </div>
+            <div class="field" id="card-awake-time" onclick="editField('awake-time')">
+              <div class="edit-hint">✎</div>
+              <div class="field-lbl">Awake after onset</div>
+              <div class="field-val empty" id="val-awake-time">—</div>
+            </div>
+            <div class="field" id="card-snooze" onclick="editField('snooze')">
+              <div class="edit-hint">✎</div>
+              <div class="field-lbl">Alarm snoozes</div>
+              <div class="field-val empty" id="val-snooze">—</div>
+            </div>
+            <div class="field" id="card-naps" onclick="editField('naps')">
+              <div class="edit-hint">✎</div>
+              <div class="field-lbl">Naps yesterday</div>
+              <div class="field-val empty" id="val-naps">—</div>
+            </div>
           </div>
         </div>
-        <div class="field rating" id="card-quantity" onclick="editField('quantity')">
-          <div class="edit-hint">✎</div>
-          <div class="field-lbl">Sleep quantity /4</div>
-          <div class="field-val empty" id="val-quantity">—</div>
-          <div class="stars" id="stars-quantity">
-            <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+
+        <div class="col-section">
+          <div class="section-label">Ratings</div>
+          <div class="fields-grid cols-1">
+            <div class="field rating" id="card-quality" onclick="editField('quality')">
+              <div class="edit-hint">✎</div>
+              <div class="field-lbl">Sleep quality /5</div>
+              <div class="field-val empty" id="val-quality">—</div>
+              <div class="stars" id="stars-quality">
+                <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+              </div>
+            </div>
+            <div class="field rating" id="card-quantity" onclick="editField('quantity')">
+              <div class="edit-hint">✎</div>
+              <div class="field-lbl">Sleep quantity /4</div>
+              <div class="field-val empty" id="val-quantity">—</div>
+              <div class="stars" id="stars-quantity">
+                <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+              </div>
+            </div>
+            <div class="field rating" id="card-energy-morning" onclick="editField('energy-morning')">
+              <div class="edit-hint">✎</div>
+              <div class="field-lbl">Morning energy /5</div>
+              <div class="field-val empty" id="val-energy-morning">—</div>
+              <div class="stars" id="stars-energy-morning">
+                <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+              </div>
+            </div>
+            <div class="field rating" id="card-energy-afternoon" onclick="editField('energy-afternoon')">
+              <div class="edit-hint">✎</div>
+              <div class="field-lbl">Afternoon energy /5</div>
+              <div class="field-val empty" id="val-energy-afternoon">—</div>
+              <div class="stars" id="stars-energy-afternoon">
+                <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+              </div>
+            </div>
+            <div class="field rating" id="card-energy-evening" onclick="editField('energy-evening')">
+              <div class="edit-hint">✎</div>
+              <div class="field-lbl">Evening energy /5</div>
+              <div class="field-val empty" id="val-energy-evening">—</div>
+              <div class="stars" id="stars-energy-evening">
+                <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="field rating" id="card-energy-morning" onclick="editField('energy-morning')">
-          <div class="edit-hint">✎</div>
-          <div class="field-lbl">Morning energy /5</div>
-          <div class="field-val empty" id="val-energy-morning">—</div>
-          <div class="stars" id="stars-energy-morning">
-            <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
-          </div>
-        </div>
-        <div class="field rating" id="card-energy-afternoon" onclick="editField('energy-afternoon')">
-          <div class="edit-hint">✎</div>
-          <div class="field-lbl">Afternoon energy /5</div>
-          <div class="field-val empty" id="val-energy-afternoon">—</div>
-          <div class="stars" id="stars-energy-afternoon">
-            <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
-          </div>
-        </div>
-        <div class="field rating" id="card-energy-evening" style="grid-column:span 2" onclick="editField('energy-evening')">
-          <div class="edit-hint">✎</div>
-          <div class="field-lbl">Evening energy /5</div>
-          <div class="field-val empty" id="val-energy-evening">—</div>
-          <div class="stars" id="stars-energy-evening">
-            <div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div>
-          </div>
-        </div>
+
       </div>
     </div>
   </div>
@@ -872,7 +919,7 @@ function switchView(name) {
 function updateProgress() {
   const filled = FIELDS.filter(f => data[f.key]).length;
   document.getElementById('progress-count').textContent = filled + '/14';
-  const offset = 113.1 - (filled / 14) * 113.1;
+  const offset = 138.2 - (filled / 14) * 138.2;
   document.getElementById('progress-fill').style.strokeDashoffset = offset;
 }
 
