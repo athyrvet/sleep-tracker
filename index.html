@@ -267,17 +267,21 @@
   .star.star-zero {
     font-size: 0.85rem;
     font-weight: 700;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
-    background: var(--card);
-    color: var(--accent2);
-    border: none;
+    background: transparent !important;
+    color: var(--accent2) !important;
+    border: none !important;
+    border-radius: 0;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
   }
 
   .star.star-zero.on {
-    background: var(--card);
-    color: var(--accent2);
+    background: transparent !important;
+    color: var(--accent2) !important;
   }
 
   .field.rating.confirming {
