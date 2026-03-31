@@ -1523,13 +1523,15 @@ async function onRecordingDone(transcript) {
   document.getElementById('transcript-box').textContent = '\u201c' + transcript.trim() + '\u201d';
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch(WHOOP_TOKEN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        system: `You are a sleep data extractor. Extract ALL fields possible from the user's natural speech.
+        action: "anthropic",
+        payload: {
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: `You are a sleep data extractor. Extract ALL fields possible from the user's natural speech.
 
 Return ONLY valid JSON with these exact keys (omit keys you cannot determine):
 {
@@ -1550,7 +1552,8 @@ Return ONLY valid JSON with these exact keys (omit keys you cannot determine):
 }
 
 Be liberal: "around eleven" \u2192 "11:00 PM", "slept 7 hours" \u2192 "7 hrs", "woke twice" \u2192 "2 times", "pretty good" \u2192 "4/5 \u2013 Good". Return ONLY JSON.`,
-        messages: [{ role: "user", content: transcript }]
+          messages: [{ role: "user", content: transcript }]
+        }
       })
     });
 
