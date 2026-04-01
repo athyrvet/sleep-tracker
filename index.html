@@ -1532,47 +1532,46 @@ async function onRecordingDone(transcript) {
   document.getElementById('transcript-box').textContent = '\u201c' + transcript.trim() + '\u201d';
 
   try {
-    const res = await fetch(WHOOP_TOKEN_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "anthropic",
-        payload: {
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: `You are a sleep data extractor. Extract ALL fields possible from the user's natural speech.
+    const transcript = document.getElementById('transcript-box').textContent.replace(/[""]/g, '').toLowerCase();
 
-Return ONLY valid JSON with these exact keys (omit keys you cannot determine):
-{
-  "bedtime": "HH:MM AM/PM",
-  "asleep": "HH:MM AM/PM",
-  "wakeup": "HH:MM AM/PM",
-  "outofbed": "HH:MM AM/PM",
-  "hours": "X hrs",
-  "awakenings": "X times",
-  "awake-time": "X min",
-  "snooze": "X snooze" or "X snoozes" (e.g. "1 snooze", "2 snoozes", "0 snoozes"),
-  "naps": "X nap" or "X naps" (e.g. "1 nap", "2 naps", "0 naps"),
-  "quality": "X/5 \u2013 Label" (1=Very poor,2=Poor,3=OK,4=Good,5=Very good),
-  "quantity": "X/4 \u2013 Label" (1=Very inadequate,2=Inadequate,3=About right,4=Too much),
-  "energy-morning": "X/5 \u2013 Label",
-  "energy-afternoon": "X/5 \u2013 Label",
-  "energy-evening": "X/5 \u2013 Label"
-}
+    // Rule-based parser for snooze and naps only
+    const parsed = {};
 
-Be liberal: "around eleven" \u2192 "11:00 PM", "slept 7 hours" \u2192 "7 hrs", "woke twice" \u2192 "2 times", "pretty good" \u2192 "4/5 \u2013 Good". Return ONLY JSON.`,
-          messages: [{ role: "user", content: transcript }]
-        }
-      })
-    });
+    const wordToNum = { 'no':0,'zero':0,'one':1,'once':1,'two':2,'twice':2,'three':3,'four':4,'five':5 };
 
-    const result = await res.json();
-    const text = result.content?.find(b => b.type === 'text')?.text || '{}';
-    const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-    Object.assign(data, parsed);
-    updateFields();
+    // Snooze patterns: "one snooze", "snoozed twice", "no snoozes", "snoozed 3 times"
+    const snoozeMatch = transcript.match(/(\w+)\s+snooze|snooze[sd]*\s+(\w+)|(\w+)\s+time[s]?\s+snooze|snooze[sd]*\s+(\d)/);
+    if (snoozeMatch) {
+      const raw = snoozeMatch[1] || snoozeMatch[2] || snoozeMatch[4];
+      const num = raw ? (wordToNum[raw] !== undefined ? wordToNum[raw] : parseInt(raw)) : null;
+      if (num !== null && !isNaN(num) && num >= 0 && num <= 5) {
+        parsed['snooze'] = num === 1 ? '1 snooze' : num + ' snoozes';
+      }
+    } else if (/no snooze|didn.t snooze|zero snooze/.test(transcript)) {
+      parsed['snooze'] = '0 snoozes';
+    }
+
+    // Nap patterns: "one nap", "took two naps", "no naps", "napped once"
+    const napMatch = transcript.match(/(\w+)\s+nap|napped\s+(\w+)|took\s+(\w+)\s+nap/);
+    if (napMatch) {
+      const raw = napMatch[1] || napMatch[2] || napMatch[3];
+      const num = raw ? (wordToNum[raw] !== undefined ? wordToNum[raw] : parseInt(raw)) : null;
+      if (num !== null && !isNaN(num) && num >= 0 && num <= 3) {
+        parsed['naps'] = num === 1 ? '1 nap' : num + ' naps';
+      }
+    } else if (/no nap|didn.t nap|zero nap/.test(transcript)) {
+      parsed['naps'] = '0 naps';
+    }
+
+    if (Object.keys(parsed).length > 0) {
+      Object.assign(data, parsed);
+      updateFields();
+      showToast('\u2713 Fields updated');
+    } else {
+      showToast('Try: "one snooze" or "two naps"');
+    }
+
     document.getElementById('processing-bar').classList.remove('visible');
-    showToast('\u2713 Fields updated');
   } catch(err) {
     document.getElementById('processing-bar').classList.remove('visible');
     showToast('Error: ' + err.message);
