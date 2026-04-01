@@ -1047,6 +1047,15 @@ function updateFields() {
         const num = parseInt(val);
         if (!isNaN(num)) updateStars(f.key, num);
       }
+      // Update snooze/naps circles
+      if (f.radio) {
+        const num = parseInt(val);
+        if (!isNaN(num)) {
+          updateStars(f.key, num);
+          const zeroEl = document.getElementById('zero-' + f.key);
+          if (zeroEl) zeroEl.classList.toggle('faded', num !== 0);
+        }
+      }
     } else {
       el.textContent = '—';
       el.classList.add('empty');
@@ -1542,8 +1551,8 @@ Return ONLY valid JSON with these exact keys (omit keys you cannot determine):
   "hours": "X hrs",
   "awakenings": "X times",
   "awake-time": "X min",
-  "snooze": "X times",
-  "naps": "X naps",
+  "snooze": "X snooze" or "X snoozes" (e.g. "1 snooze", "2 snoozes", "0 snoozes"),
+  "naps": "X nap" or "X naps" (e.g. "1 nap", "2 naps", "0 naps"),
   "quality": "X/5 \u2013 Label" (1=Very poor,2=Poor,3=OK,4=Good,5=Very good),
   "quantity": "X/4 \u2013 Label" (1=Very inadequate,2=Inadequate,3=About right,4=Too much),
   "energy-morning": "X/5 \u2013 Label",
