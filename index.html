@@ -883,6 +883,7 @@
       <span id="mic-icon">🎙️</span>
     </button>
     <button class="bar-btn" onclick="saveEntry()">Save ✓</button>
+    <button class="bar-btn" onclick="openPastEntry()" title="Add past entry">+ Past</button>
   </div>
 
   <div class="nav-tabs">
@@ -956,6 +957,21 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeConfirm()">No</button>
       <button class="btn btn-primary" id="confirm-yes-btn">Yes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PAST ENTRY MODAL ══════════════ -->
+<div class="modal-overlay" id="past-entry-modal">
+  <div class="modal-box">
+    <div class="modal-title" style="color:var(--text);font-size:0.9rem;margin-bottom:14px;">Add Past Entry</div>
+    <div class="modal-hint">Select a date to load from Whoop or enter manually.</div>
+    <input type="date" id="past-entry-date" class="modal-input"
+      style="color-scheme:dark;"
+      max="" />
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closePastEntry()">Cancel</button>
+      <button class="btn btn-primary" onclick="loadPastEntry()">Load ↗</button>
     </div>
   </div>
 </div>
@@ -1867,6 +1883,155 @@ function loadEntry(key) {
     updateFields();
     switchView('tracker');
     showToast('Loaded entry for ' + key);
+  }
+}
+
+// ── Past Entry ──
+let pastEntryKey = null;
+
+function openPastEntry() {
+  const today = new Date().toISOString().slice(0,10);
+  const input = document.getElementById('past-entry-date');
+  input.max = today;
+  // Default to yesterday
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  input.value = yesterday.toISOString().slice(0,10);
+  document.getElementById('past-entry-modal').classList.add('visible');
+}
+
+function closePastEntry() {
+  document.getElementById('past-entry-modal').classList.remove('visible');
+  pastEntryKey = null;
+}
+
+async function loadPastEntry() {
+  const dateVal = document.getElementById('past-entry-date').value;
+  if (!dateVal) { showToast('Please select a date'); return; }
+
+  pastEntryKey = dateVal;
+  closePastEntry();
+
+  // Check if entry already exists
+  const entries = JSON.parse(localStorage.getItem('sleep_entries') || '{}');
+  if (entries[dateVal]) {
+    showConfirm('An entry already exists for ' + dateVal + '. Overwrite it?', () => {
+      attemptWhoopFetchForDate(dateVal);
+    });
+    return;
+  }
+
+  attemptWhoopFetchForDate(dateVal);
+}
+
+async function attemptWhoopFetchForDate(dateKey) {
+  // Switch to tracker view and clear current data
+  data = { snooze: '0 snoozes', naps: '0 naps' };
+  updateFields();
+
+  // Update header date to show past date
+  const d = new Date(dateKey + 'T12:00:00');
+  document.getElementById('today-date').textContent =
+    d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) + ' (past)';
+
+  const token = await getValidToken();
+  if (!token) {
+    showToast('No Whoop connection — fill manually');
+    return;
+  }
+
+  showToast('Fetching Whoop data for ' + dateKey + '…');
+
+  try {
+    // Fetch last 10 sleep records and find the one matching the date
+    const res = await fetch(WHOOP_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'fetch_sleep_range', access_token: token, date: dateKey })
+    });
+
+    const json = await res.json();
+    const records = json.records || [];
+
+    // Find record whose start date matches
+    const match = records.find(r => r.start && r.start.slice(0,10) === dateKey);
+
+    if (!match) {
+      showToast('No Whoop data for ' + dateKey + ' — fill manually');
+      return;
+    }
+
+    // Same mapping as today
+    const s = match.score;
+    const start = new Date(match.start);
+    const end = new Date(match.end);
+
+    function fmt(d) { return d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' }); }
+    function perfToScale(pct) {
+      if (pct >= 81) return '5/5 \u2013 Very good';
+      if (pct >= 61) return '4/5 \u2013 Good';
+      if (pct >= 41) return '3/5 \u2013 OK';
+      if (pct >= 21) return '2/5 \u2013 Poor';
+      return '1/5 \u2013 Very poor';
+    }
+    function quantityFromHours(hrs) {
+      if (hrs >= 9) return '4/4 \u2013 Too much';
+      if (hrs >= 7) return '3/4 \u2013 About right';
+      if (hrs >= 5) return '2/4 \u2013 Inadequate';
+      return '1/4 \u2013 Very inadequate';
+    }
+
+    const totalMs = new Date(match.end) - new Date(match.start);
+    const awakeSecs = s.stage_summary.total_awake_time_milli / 1000;
+    const sleepHrs = parseFloat(((totalMs / 3600000) - (awakeSecs / 3600)).toFixed(1));
+    const awakeMin = Math.round(awakeSecs / 60);
+
+    data['bedtime'] = fmt(start);
+    data['asleep'] = fmt(new Date(start.getTime() + s.stage_summary.total_awake_time_milli / 2));
+    data['wakeup'] = fmt(new Date(end.getTime() - s.stage_summary.total_awake_time_milli / 2));
+    data['outofbed'] = fmt(end);
+    data['hours'] = sleepHrs + ' hrs';
+    data['awakenings'] = (s.stage_summary.disturbance_count || 0) + ' times';
+    data['awake-time'] = awakeMin + ' min';
+    data['quality'] = perfToScale(s.sleep_performance_percentage);
+    data['quantity'] = quantityFromHours(sleepHrs);
+    if (match.nap) data['naps'] = '1 nap';
+
+    updateFields();
+    showToast('\u2713 Whoop data loaded for ' + dateKey);
+
+  } catch(err) {
+    showToast('Whoop fetch failed — fill manually');
+  }
+}
+
+// Override saveEntry to use pastEntryKey when set
+const _originalSaveEntry = saveEntry;
+function saveEntry() {
+  const keyToSave = pastEntryKey || todayKey;
+  const entries = JSON.parse(localStorage.getItem('sleep_entries') || '{}');
+
+  const doSave = () => {
+    entries[keyToSave] = { ...data, savedAt: new Date().toISOString() };
+    localStorage.setItem('sleep_entries', JSON.stringify(entries));
+    closeSummary();
+    showToast('\u2713 Entry saved for ' + keyToSave + '!');
+    // Reset to today
+    if (pastEntryKey) {
+      pastEntryKey = null;
+      data = { snooze: '0 snoozes', naps: '0 naps' };
+      updateFields();
+      document.getElementById('today-date').textContent =
+        now.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+    }
+  };
+
+  if (entries[keyToSave] && keyToSave !== todayKey) {
+    showConfirm('Overwrite existing entry for ' + keyToSave + '?', doSave);
+  } else if (entries[keyToSave] && keyToSave === todayKey) {
+    showConfirm('Entry already exists for today. Overwrite it?', doSave);
+  } else {
+    doSave();
   }
 }
 
