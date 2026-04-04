@@ -882,8 +882,8 @@
     <button class="voice-btn" id="voice-btn" onclick="toggleListening()">
       <span id="mic-icon">🎙️</span>
     </button>
-    <button class="bar-btn" onclick="saveEntry()">Save ✓</button>
     <button class="bar-btn" onclick="openPastEntry()" title="Add past entry">+ Past</button>
+    <button class="bar-btn" onclick="saveEntry()">Save ✓</button>
   </div>
 
   <div class="nav-tabs">
@@ -1996,6 +1996,11 @@ async function attemptWhoopFetchForDate(dateKey) {
     data['quality'] = perfToScale(s.sleep_performance_percentage);
     data['quantity'] = quantityFromHours(sleepHrs);
     if (match.nap) data['naps'] = '1 nap';
+
+    // Energy fields not available from Whoop — must be entered manually
+    data['energy-morning'] = null;
+    data['energy-afternoon'] = null;
+    data['energy-evening'] = null;
 
     updateFields();
     showToast('\u2713 Whoop data loaded for ' + dateKey);
